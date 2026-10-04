@@ -14,12 +14,13 @@ const SchemaVersion = 1
 
 type jsonReport struct {
 	SchemaVersion int           `json:"schemaVersion"`
-	Tool          jsonTool      `json:"tool"`
+	Tool          ToolJSON      `json:"tool"`
 	Summary       jsonSummary   `json:"summary"`
-	Findings      []jsonFinding `json:"findings"`
+	Findings      []FindingJSON `json:"findings"`
 }
 
-type jsonTool struct {
+// ToolJSON identifies realmlint in JSON output.
+type ToolJSON struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }
@@ -33,7 +34,8 @@ type jsonSummary struct {
 	BySeverity  map[string]int `json:"bySeverity"`
 }
 
-type jsonFinding struct {
+// FindingJSON is a finding in JSON output. The diff command uses it too.
+type FindingJSON struct {
 	Check    string         `json:"check"`
 	Title    string         `json:"title"`
 	Severity check.Severity `json:"severity"`
@@ -49,7 +51,7 @@ type jsonFinding struct {
 func JSON(w io.Writer, res Result, version string) error {
 	out := jsonReport{
 		SchemaVersion: SchemaVersion,
-		Tool:          jsonTool{Name: "realmlint", Version: version},
+		Tool:          ToolJSON{Name: "realmlint", Version: version},
 		Summary: jsonSummary{
 			Realms:      len(res.Realms),
 			Findings:    res.Matched,
@@ -58,25 +60,30 @@ func JSON(w io.Writer, res Result, version string) error {
 			MinSeverity: res.MinSeverity,
 			BySeverity:  map[string]int{},
 		},
-		Findings: make([]jsonFinding, 0, len(res.Findings)),
+		Findings: make([]FindingJSON, 0, len(res.Findings)),
 	}
 	for s := check.Low; s <= check.Critical; s++ {
 		out.Summary.BySeverity[s.String()] = res.Counts[s]
 	}
 	for _, f := range res.Findings {
-		out.Findings = append(out.Findings, jsonFinding{
-			Check:    f.CheckID,
-			Title:    f.Title,
-			Severity: f.Severity,
-			Realm:    f.Realm,
-			Object:   f.Object,
-			Message:  f.Message,
-			Why:      f.Why,
-			Fix:      f.Fix,
-			Source:   f.Source,
-		})
+		out.Findings = append(out.Findings, NewFindingJSON(f))
 	}
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(out)
+}
+
+// NewFindingJSON converts a finding for JSON output.
+func NewFindingJSON(f check.Finding) FindingJSON {
+	return FindingJSON{
+		Check:    f.CheckID,
+		Title:    f.Title,
+		Severity: f.Severity,
+		Realm:    f.Realm,
+		Object:   f.Object,
+		Message:  f.Message,
+		Why:      f.Why,
+		Fix:      f.Fix,
+		Source:   f.Source,
+	}
 }

@@ -57,6 +57,10 @@ type Realm struct {
 
 	// Source is the file the realm was loaded from.
 	Source string `json:"-"`
+	// Raw is the complete export as generic JSON (numbers as json.Number),
+	// including fields the model does not cover. Users from separate users
+	// files are merged into Raw["users"].
+	Raw map[string]any `json:"-"`
 }
 
 // ComponentsOf returns the realm's components of one provider type, such as

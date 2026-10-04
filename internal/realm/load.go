@@ -16,9 +16,10 @@ var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
 // usersFile is a separate users file written by
 // `kc.sh export --dir ... --users different_files`.
 type usersFile struct {
-	Realm string `json:"realm"`
-	Users []User `json:"users"`
-	path  string
+	Realm    string `json:"realm"`
+	Users    []User `json:"users"`
+	rawUsers []any
+	path     string
 }
 
 // Load reads realm exports from files and directories and returns the
@@ -64,6 +65,8 @@ func Load(paths ...string) ([]*Realm, error) {
 			return nil, fmt.Errorf("%s: users file for realm %q, but no export for that realm was given", uf.path, uf.Realm)
 		}
 		r.Users = append(r.Users, uf.Users...)
+		existing, _ := r.Raw["users"].([]any)
+		r.Raw["users"] = append(existing, uf.rawUsers...)
 	}
 	return realms, nil
 }
@@ -132,6 +135,11 @@ func parseFile(path string) ([]*Realm, *usersFile, error) {
 			if err := json.Unmarshal(data, &uf); err != nil {
 				return nil, nil, fmt.Errorf("%s: %w", path, err)
 			}
+			raw, err := decodeRaw(data)
+			if err != nil {
+				return nil, nil, fmt.Errorf("%s: %w", path, err)
+			}
+			uf.rawUsers, _ = raw["users"].([]any)
 			uf.path = path
 			return nil, &uf, nil
 		}
@@ -155,7 +163,23 @@ func parseRealm(data []byte) (*Realm, error) {
 	if r.Realm == "" {
 		return nil, errors.New(`not a Keycloak realm export: missing "realm" name`)
 	}
+	raw, err := decodeRaw(data)
+	if err != nil {
+		return nil, err
+	}
+	r.Raw = raw
 	return &r, nil
+}
+
+// decodeRaw decodes a JSON object generically, keeping numbers exact.
+func decodeRaw(data []byte) (map[string]any, error) {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	var raw map[string]any
+	if err := dec.Decode(&raw); err != nil {
+		return nil, err
+	}
+	return raw, nil
 }
 
 // isUsersFile reports whether an object holds only a realm name and users,

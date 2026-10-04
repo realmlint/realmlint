@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/edzordzinam/realmlint/internal/check"
+	"github.com/edzordzinam/realmlint/internal/diff"
 	"github.com/edzordzinam/realmlint/internal/realm"
 	"github.com/edzordzinam/realmlint/internal/report"
 	"github.com/edzordzinam/realmlint/internal/version"
@@ -21,6 +22,7 @@ Usage:
 
 Commands:
   check      Check realm exports and report problems
+  diff       Compare two realm exports and show what changed
   version    Print the realmlint version
 
 Flags:
@@ -52,6 +54,27 @@ Exit codes:
   2  usage error or unreadable input
 `
 
+const diffUsage = `Compare two realm exports and show what changed.
+
+Usage:
+  realmlint diff [flags] <before> <after>
+
+<before> and <after> are each a realm export file or directory. Realms are
+matched by name. Lists are matched by clientId, username, alias or name, so
+reordering is not a change. Internal IDs and timestamps are ignored, and
+secret values are never shown. Findings that the change introduces or
+resolves are listed after the changes.
+
+Flags:
+  --format text|json    Output format (default text)
+  -h, --help            Show this help
+
+Exit codes:
+  0  no changes
+  1  changes found
+  2  usage error or unreadable input
+`
+
 // Exit codes.
 const (
 	ExitOK       = 0
@@ -79,6 +102,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return ExitOK
 	case "check":
 		return runCheck(args[1:], stdout, stderr)
+	case "diff":
+		return runDiff(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "realmlint: unknown command %q\nRun 'realmlint --help' for usage.\n", args[0])
 		return ExitUsage
@@ -131,6 +156,59 @@ func runCheck(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if res.Matched > 0 {
+		return ExitFindings
+	}
+	return ExitOK
+}
+
+func runDiff(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("diff", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	format := fs.String("format", "text", "")
+
+	paths, err := parseInterspersed(fs, args)
+	if errors.Is(err, flag.ErrHelp) {
+		fmt.Fprint(stdout, diffUsage)
+		return ExitOK
+	}
+	if err != nil {
+		return usageError(stderr, "diff", err.Error())
+	}
+	if *format != "text" && *format != "json" {
+		return usageError(stderr, "diff", fmt.Sprintf("unknown format %q (use text or json)", *format))
+	}
+	if len(paths) != 2 {
+		return usageError(stderr, "diff", fmt.Sprintf("need exactly two exports, <before> and <after>; got %d", len(paths)))
+	}
+
+	before, err := realm.Load(paths[0])
+	if err != nil {
+		fmt.Fprintf(stderr, "realmlint: %v\n", err)
+		return ExitUsage
+	}
+	after, err := realm.Load(paths[1])
+	if err != nil {
+		fmt.Fprintf(stderr, "realmlint: %v\n", err)
+		return ExitUsage
+	}
+
+	t := now()
+	added, resolved := diff.CompareFindings(check.Run(before, check.All(), t), check.Run(after, check.All(), t))
+	res := diff.Result{
+		Changes:          diff.Compare(before, after),
+		NewFindings:      report.Build(after, added, check.Low, 0).Findings,
+		ResolvedFindings: report.Build(before, resolved, check.Low, 0).Findings,
+	}
+	if *format == "json" {
+		if err := diff.JSON(stdout, res, version.String()); err != nil {
+			fmt.Fprintf(stderr, "realmlint: %v\n", err)
+			return ExitUsage
+		}
+	} else {
+		diff.Text(stdout, res)
+	}
+
+	if len(res.Changes) > 0 {
 		return ExitFindings
 	}
 	return ExitOK
