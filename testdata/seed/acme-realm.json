@@ -1,0 +1,107 @@
+{
+  "realm": "acme",
+  "enabled": true,
+  "sslRequired": "none",
+  "bruteForceProtected": false,
+  "eventsEnabled": false,
+  "adminEventsEnabled": false,
+  "accessTokenLifespan": 3600,
+  "ssoSessionIdleTimeout": 86400,
+  "ssoSessionMaxLifespan": 2592000,
+  "offlineSessionMaxLifespanEnabled": false,
+  "passwordPolicy": "length(6)",
+  "roles": {
+    "realm": [
+      { "name": "app-user", "description": "Regular application user" },
+      { "name": "app-admin", "description": "Application administrator" }
+    ]
+  },
+  "groups": [
+    {
+      "name": "staff",
+      "realmRoles": ["app-user"],
+      "subGroups": [
+        { "name": "admins", "realmRoles": ["app-admin"] }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "web-spa",
+      "name": "Web SPA",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "mobile-app",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["com.acme.mobile:/callback"],
+      "protocol": "openid-connect",
+      "attributes": { "pkce.code.challenge.method": "S256" }
+    },
+    {
+      "clientId": "billing-service",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "seed-secret-not-real",
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "legacy-portal",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "seed-secret-not-real",
+      "standardFlowEnabled": true,
+      "redirectUris": ["http://portal.acme.example/*"],
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@acme.example",
+      "groups": ["/staff/admins"],
+      "clientRoles": { "realm-management": ["realm-admin"] },
+      "credentials": [{ "type": "password", "value": "seed-password-not-real", "temporary": false }]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "email": "bob@acme.example",
+      "groups": ["/staff"]
+    },
+    {
+      "username": "service-account-billing-service",
+      "enabled": true,
+      "serviceAccountClientId": "billing-service",
+      "clientRoles": { "realm-management": ["realm-admin"] }
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "partner-saml",
+      "providerId": "saml",
+      "enabled": true,
+      "config": {
+        "singleSignOnServiceUrl": "https://idp.partner.example/sso",
+        "entityId": "https://idp.partner.example",
+        "validateSignature": "false"
+      }
+    }
+  ]
+}

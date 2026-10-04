@@ -1,0 +1,24 @@
+{
+  "realm": "acme",
+  "users": [
+    {
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ]
+      },
+      "createdTimestamp": 1791105150943,
+      "credentials": [],
+      "disableableCredentialTypes": [],
+      "emailVerified": false,
+      "enabled": true,
+      "groups": [],
+      "id": "e3ed85e3-a6d7-4138-99c6-44d43077168b",
+      "notBefore": 0,
+      "requiredActions": [],
+      "serviceAccountClientId": "billing-service",
+      "totp": false,
+      "username": "service-account-billing-service"
+    }
+  ]
+}

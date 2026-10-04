@@ -1,0 +1,50 @@
+{
+  "realm": "acme",
+  "users": [
+    {
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ]
+      },
+      "createdTimestamp": 1791105150885,
+      "credentials": [
+        {
+          "createdDate": 1791105150930,
+          "credentialData": "**********",
+          "id": "f2283462-d235-4b5c-a92a-db0f26024fe2",
+          "secretData": "**********",
+          "type": "password"
+        }
+      ],
+      "disableableCredentialTypes": [],
+      "email": "alice@acme.example",
+      "emailVerified": false,
+      "enabled": true,
+      "groups": [
+        "/staff/admins"
+      ],
+      "id": "e5bf428f-0bfe-4de8-840c-b46dad91c5ca",
+      "notBefore": 0,
+      "requiredActions": [],
+      "totp": false,
+      "username": "alice"
+    },
+    {
+      "createdTimestamp": 1791105150942,
+      "credentials": [],
+      "disableableCredentialTypes": [],
+      "email": "bob@acme.example",
+      "emailVerified": false,
+      "enabled": true,
+      "groups": [
+        "/staff"
+      ],
+      "id": "d96508af-1abe-4f7d-8f65-9087cec7eb5e",
+      "notBefore": 0,
+      "requiredActions": [],
+      "totp": false,
+      "username": "bob"
+    }
+  ]
+}
