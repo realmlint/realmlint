@@ -1,0 +1,5 @@
+/realmlint
+/dist/
+*.test
+*.out
+.idea/
