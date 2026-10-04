@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/edzordzinam/realmlint/internal/check"
+	"github.com/edzordzinam/realmlint/internal/config"
 	"github.com/edzordzinam/realmlint/internal/diff"
 	"github.com/edzordzinam/realmlint/internal/realm"
 	"github.com/edzordzinam/realmlint/internal/report"
@@ -42,16 +43,29 @@ console's partial export. Separate users files in a directory are merged
 into their realm.
 
 Flags:
-  --format text|json      Output format (default text)
-  --min-severity LEVEL    Report only findings at or above LEVEL:
-                          low, medium, high or critical (default low)
-  --top N                 Show only the N most severe findings (default all)
-  -h, --help              Show this help
+  --format text|json|sarif  Output format (default text). SARIF is for
+                            GitHub code scanning and similar tools.
+  --min-severity LEVEL      Report only findings at or above LEVEL:
+                            low, medium, high or critical (default low)
+  --fail-on LEVEL           Exit 1 only for findings at or above LEVEL, or
+                            never with "none" (default: the --min-severity
+                            level)
+  --top N                   Show only the N most severe findings (default all)
+  --config FILE             Read ignore rules from FILE (default
+                            .realmlint.yaml in the current directory, if any)
+  -h, --help                Show this help
 
 Exit codes:
-  0  no findings at or above --min-severity
-  1  findings reported
+  0  no findings at or above --fail-on
+  1  findings at or above --fail-on
   2  usage error or unreadable input
+
+Ignore rules (.realmlint.yaml):
+  ignore:
+    - check: full-scope-allowed
+      realm: acme                 # optional
+      object: 'client "admin-ui"' # optional, as printed in the output
+      reason: The admin UI needs every role the user has.
 `
 
 const diffUsage = `Compare two realm exports and show what changed.
@@ -67,6 +81,8 @@ resolves are listed after the changes.
 
 Flags:
   --format text|json    Output format (default text)
+  --config FILE         Ignore rules for the finding comparison (default
+                        .realmlint.yaml in the current directory, if any)
   -h, --help            Show this help
 
 Exit codes:
@@ -115,7 +131,9 @@ func runCheck(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(io.Discard)
 	format := fs.String("format", "text", "")
 	minSeverity := fs.String("min-severity", "low", "")
+	failOn := fs.String("fail-on", "", "")
 	top := fs.Int("top", 0, "")
+	configPath := fs.String("config", "", "")
 
 	paths, err := parseInterspersed(fs, args)
 	if errors.Is(err, flag.ErrHelp) {
@@ -125,12 +143,25 @@ func runCheck(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return usageError(stderr, "check", err.Error())
 	}
-	if *format != "text" && *format != "json" {
-		return usageError(stderr, "check", fmt.Sprintf("unknown format %q (use text or json)", *format))
+	switch *format {
+	case "text", "json", "sarif":
+	default:
+		return usageError(stderr, "check", fmt.Sprintf("unknown format %q (use text, json or sarif)", *format))
 	}
 	sev, err := check.ParseSeverity(*minSeverity)
 	if err != nil {
 		return usageError(stderr, "check", err.Error())
+	}
+	// By default a run fails on any finding it reports.
+	failSev, failNever := sev, false
+	switch *failOn {
+	case "":
+	case "none":
+		failNever = true
+	default:
+		if failSev, err = check.ParseSeverity(*failOn); err != nil {
+			return usageError(stderr, "check", "--fail-on: "+err.Error()+" or none")
+		}
 	}
 	if *top < 0 {
 		return usageError(stderr, "check", "--top must be 0 or more")
@@ -139,32 +170,67 @@ func runCheck(args []string, stdout, stderr io.Writer) int {
 		return usageError(stderr, "check", "no realm export files or directories given")
 	}
 
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "realmlint: %v\n", err)
+		return ExitUsage
+	}
 	realms, err := realm.Load(paths...)
 	if err != nil {
 		fmt.Fprintf(stderr, "realmlint: %v\n", err)
 		return ExitUsage
 	}
 
-	res := report.Build(realms, check.Run(realms, check.All(), now()), sev, *top)
-	if *format == "json" {
-		if err := report.JSON(stdout, res, version.String()); err != nil {
-			fmt.Fprintf(stderr, "realmlint: %v\n", err)
-			return ExitUsage
-		}
-	} else {
+	findings, suppressed := applyConfig(cfg, check.Run(realms, check.All(), now()), stderr)
+	res := report.Build(realms, findings, sev, *top)
+	res.Suppressed = suppressed
+
+	switch *format {
+	case "json":
+		err = report.JSON(stdout, res, version.String())
+	case "sarif":
+		err = report.SARIF(stdout, res, version.String())
+	default:
 		report.Text(stdout, res)
 	}
+	if err != nil {
+		fmt.Fprintf(stderr, "realmlint: %v\n", err)
+		return ExitUsage
+	}
 
-	if res.Matched > 0 {
-		return ExitFindings
+	if failNever {
+		return ExitOK
+	}
+	for _, f := range findings {
+		if f.Severity >= failSev {
+			return ExitFindings
+		}
 	}
 	return ExitOK
+}
+
+// applyConfig removes suppressed findings and warns about ignore entries
+// that matched nothing.
+func applyConfig(cfg *config.Config, findings []check.Finding, stderr io.Writer) ([]check.Finding, int) {
+	kept, suppressed, unused := cfg.Apply(findings)
+	for _, ig := range unused {
+		where := ig.Check
+		if ig.Realm != "" {
+			where += " in realm " + ig.Realm
+		}
+		if ig.Object != "" {
+			where += " on " + ig.Object
+		}
+		fmt.Fprintf(stderr, "realmlint: warning: %s: ignore entry for %s matched no findings\n", cfg.Path, where)
+	}
+	return kept, suppressed
 }
 
 func runDiff(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("diff", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	format := fs.String("format", "text", "")
+	configPath := fs.String("config", "", "")
 
 	paths, err := parseInterspersed(fs, args)
 	if errors.Is(err, flag.ErrHelp) {
@@ -181,6 +247,11 @@ func runDiff(args []string, stdout, stderr io.Writer) int {
 		return usageError(stderr, "diff", fmt.Sprintf("need exactly two exports, <before> and <after>; got %d", len(paths)))
 	}
 
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "realmlint: %v\n", err)
+		return ExitUsage
+	}
 	before, err := realm.Load(paths[0])
 	if err != nil {
 		fmt.Fprintf(stderr, "realmlint: %v\n", err)
@@ -193,7 +264,11 @@ func runDiff(args []string, stdout, stderr io.Writer) int {
 	}
 
 	t := now()
-	added, resolved := diff.CompareFindings(check.Run(before, check.All(), t), check.Run(after, check.All(), t))
+	// Unused-entry warnings are left to the check command; in a diff an
+	// entry often matches only one side.
+	beforeFindings, _, _ := cfg.Apply(check.Run(before, check.All(), t))
+	afterFindings, _, _ := cfg.Apply(check.Run(after, check.All(), t))
+	added, resolved := diff.CompareFindings(beforeFindings, afterFindings)
 	res := diff.Result{
 		Changes:          diff.Compare(before, after),
 		NewFindings:      report.Build(after, added, check.Low, 0).Findings,

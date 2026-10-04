@@ -82,6 +82,9 @@ func summary(res Result) string {
 	if res.Hidden > 0 {
 		fmt.Fprintf(&b, " %s below %s not shown.", plural(res.Hidden, "finding"), res.MinSeverity)
 	}
+	if res.Suppressed > 0 {
+		fmt.Fprintf(&b, " %d suppressed by configuration.", res.Suppressed)
+	}
 	return b.String()
 }
 

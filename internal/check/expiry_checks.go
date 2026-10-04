@@ -109,10 +109,11 @@ var expiryChecks = []Check{
 		},
 	},
 	{
-		ID:    "keycloak-version-outdated",
-		Title: "Keycloak version is out of date",
-		Why:   "Older Keycloak releases miss security fixes, and realmlint's checks are only tested against recent releases.",
-		Fix:   "Upgrade Keycloak to the latest 26.x release, reading the upgrade notes for each minor release in between.",
+		ID:      "keycloak-version-outdated",
+		Setting: "keycloakVersion",
+		Title:   "Keycloak version is out of date",
+		Why:     "Older Keycloak releases miss security fixes, and realmlint's checks are only tested against recent releases.",
+		Fix:     "Upgrade Keycloak to the latest 26.x release, reading the upgrade notes for each minor release in between.",
 		Run: func(ctx *Context) []Finding {
 			v := ctx.Realm.KeycloakVersion
 			if v == "" || !versionBefore(v, OldestSupportedVersion) {

@@ -19,7 +19,10 @@ type Result struct {
 	// Counts holds Matched broken down by severity.
 	Counts map[check.Severity]int
 	// Hidden counts findings below MinSeverity.
-	Hidden      int
+	Hidden int
+	// Suppressed counts findings ignored by the configuration file. They
+	// are not part of Findings.
+	Suppressed  int
 	MinSeverity check.Severity
 	Top         int
 }

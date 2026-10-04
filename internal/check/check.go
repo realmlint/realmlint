@@ -7,6 +7,8 @@ package check
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,6 +74,8 @@ type Finding struct {
 	Fix string
 	// Source is the export file the realm was loaded from.
 	Source string
+	// Setting is copied from the check; see Check.Setting.
+	Setting string
 }
 
 // Check is one rule.
@@ -80,7 +84,11 @@ type Check struct {
 	Title string
 	Why   string
 	Fix   string
-	Run   func(*Context) []Finding
+	// Setting is the realm export field that realm-wide findings of this
+	// check are about, such as "sslRequired". It is used to point at the
+	// right line in the export.
+	Setting string
+	Run     func(*Context) []Finding
 }
 
 // Context is what a check sees.
@@ -117,6 +125,7 @@ func Run(realms []*realm.Realm, checks []Check, now time.Time) []Finding {
 				f.Why = c.Why
 				f.Fix = c.Fix
 				f.Source = r.Source
+				f.Setting = c.Setting
 				findings = append(findings, f)
 			}
 		}
@@ -154,4 +163,34 @@ func plural(n int, unit string) string {
 		return "1 " + unit
 	}
 	return fmt.Sprintf("%d %ss", n, unit)
+}
+
+// objectPatterns map the Object formats above to the export field and value
+// that identify the object.
+var objectPatterns = []struct {
+	re    *regexp.Regexp
+	field string
+}{
+	{regexp.MustCompile(`^service account of client ("(?:[^"\\]|\\.)*")$`), "serviceAccountClientId"},
+	{regexp.MustCompile(`^client ("(?:[^"\\]|\\.)*")$`), "clientId"},
+	{regexp.MustCompile(`^user ("(?:[^"\\]|\\.)*")$`), "username"},
+	{regexp.MustCompile(`^identity provider ("(?:[^"\\]|\\.)*")$`), "alias"},
+	{regexp.MustCompile(`^key ("(?:[^"\\]|\\.)*") \(`), "name"},
+}
+
+// Locate returns the export field (and its value, for objects) that a
+// finding is about, such as ("clientId", "web-spa") or ("sslRequired", "").
+// Both are empty when the finding cannot be tied to a field.
+func (f Finding) Locate() (field, value string) {
+	for _, p := range objectPatterns {
+		if m := p.re.FindStringSubmatch(f.Object); m != nil {
+			if v, err := strconv.Unquote(m[1]); err == nil {
+				return p.field, v
+			}
+		}
+	}
+	if f.Object == "" {
+		return f.Setting, ""
+	}
+	return "", ""
 }

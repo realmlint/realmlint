@@ -17,10 +17,11 @@ const (
 
 var tokenChecks = []Check{
 	{
-		ID:    "long-access-token",
-		Title: "Access tokens live too long",
-		Why:   "Access tokens cannot be revoked before they expire. A leaked token stays usable for its whole lifetime.",
-		Fix:   fmt.Sprintf("Set Access Token Lifespan to %s or less in Realm settings > Tokens, and remove longer per-client overrides in the client's Advanced tab.", humanDuration(maxAccessTokenLifespan)),
+		ID:      "long-access-token",
+		Setting: "accessTokenLifespan",
+		Title:   "Access tokens live too long",
+		Why:     "Access tokens cannot be revoked before they expire. A leaked token stays usable for its whole lifetime.",
+		Fix:     fmt.Sprintf("Set Access Token Lifespan to %s or less in Realm settings > Tokens, and remove longer per-client overrides in the client's Advanced tab.", humanDuration(maxAccessTokenLifespan)),
 		Run: func(ctx *Context) []Finding {
 			var findings []Finding
 			if n := ctx.Realm.AccessTokenLifespan; n > maxAccessTokenLifespan {
@@ -45,10 +46,11 @@ var tokenChecks = []Check{
 		},
 	},
 	{
-		ID:    "long-sso-session",
-		Title: "Login sessions last too long",
-		Why:   "Refresh tokens stay valid as long as the login session. Long sessions keep stolen refresh tokens and unattended browsers logged in.",
-		Fix:   fmt.Sprintf("In Realm settings > Sessions, set SSO Session Idle to %s or less and SSO Session Max to %s or less.", humanDuration(maxSSOSessionIdle), humanDuration(maxSSOSessionLifespan)),
+		ID:      "long-sso-session",
+		Setting: "ssoSessionIdleTimeout",
+		Title:   "Login sessions last too long",
+		Why:     "Refresh tokens stay valid as long as the login session. Long sessions keep stolen refresh tokens and unattended browsers logged in.",
+		Fix:     fmt.Sprintf("In Realm settings > Sessions, set SSO Session Idle to %s or less and SSO Session Max to %s or less.", humanDuration(maxSSOSessionIdle), humanDuration(maxSSOSessionLifespan)),
 		Run: func(ctx *Context) []Finding {
 			var findings []Finding
 			if n := ctx.Realm.SSOSessionIdleTimeout; n > maxSSOSessionIdle {
@@ -61,10 +63,11 @@ var tokenChecks = []Check{
 		},
 	},
 	{
-		ID:    "offline-sessions-unbounded",
-		Title: "Offline sessions never expire",
-		Why:   "Offline tokens with no maximum lifespan stay valid forever as long as they are used regularly, so a leaked offline token gives permanent access.",
-		Fix:   "In Realm settings > Sessions, enable Offline Session Max Limited and set Offline Session Max.",
+		ID:      "offline-sessions-unbounded",
+		Setting: "offlineSessionMaxLifespanEnabled",
+		Title:   "Offline sessions never expire",
+		Why:     "Offline tokens with no maximum lifespan stay valid forever as long as they are used regularly, so a leaked offline token gives permanent access.",
+		Fix:     "In Realm settings > Sessions, enable Offline Session Max Limited and set Offline Session Max.",
 		Run: func(ctx *Context) []Finding {
 			if ctx.Realm.OfflineSessionMaxLifespanEnabled {
 				return nil

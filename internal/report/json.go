@@ -30,6 +30,7 @@ type jsonSummary struct {
 	Findings    int            `json:"findings"`
 	Shown       int            `json:"shown"`
 	Hidden      int            `json:"hidden"`
+	Suppressed  int            `json:"suppressed"`
 	MinSeverity check.Severity `json:"minSeverity"`
 	BySeverity  map[string]int `json:"bySeverity"`
 }
@@ -57,6 +58,7 @@ func JSON(w io.Writer, res Result, version string) error {
 			Findings:    res.Matched,
 			Shown:       len(res.Findings),
 			Hidden:      res.Hidden,
+			Suppressed:  res.Suppressed,
 			MinSeverity: res.MinSeverity,
 			BySeverity:  map[string]int{},
 		},

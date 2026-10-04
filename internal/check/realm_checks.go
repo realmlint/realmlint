@@ -19,10 +19,11 @@ var passwordLengthRule = regexp.MustCompile(`(?:^|\s)length\((\d+)\)`)
 
 var realmChecks = []Check{
 	{
-		ID:    "ssl-required-none",
-		Title: "HTTPS is not required",
-		Why:   "With Require SSL set to none, Keycloak accepts logins and issues tokens over plain HTTP from any address, so passwords and tokens can be read on the network.",
-		Fix:   `In Realm settings > General, set Require SSL to "external requests" or "all requests".`,
+		ID:      "ssl-required-none",
+		Setting: "sslRequired",
+		Title:   "HTTPS is not required",
+		Why:     "With Require SSL set to none, Keycloak accepts logins and issues tokens over plain HTTP from any address, so passwords and tokens can be read on the network.",
+		Fix:     `In Realm settings > General, set Require SSL to "external requests" or "all requests".`,
 		Run: func(ctx *Context) []Finding {
 			if ctx.Realm.SSLRequired != "none" {
 				return nil
@@ -31,10 +32,11 @@ var realmChecks = []Check{
 		},
 	},
 	{
-		ID:    "brute-force-disabled",
-		Title: "Brute-force protection is off",
-		Why:   "Without brute-force detection, attackers can try unlimited passwords against any account.",
-		Fix:   "In Realm settings > Security defenses > Brute force detection, enable lockout.",
+		ID:      "brute-force-disabled",
+		Setting: "bruteForceProtected",
+		Title:   "Brute-force protection is off",
+		Why:     "Without brute-force detection, attackers can try unlimited passwords against any account.",
+		Fix:     "In Realm settings > Security defenses > Brute force detection, enable lockout.",
 		Run: func(ctx *Context) []Finding {
 			if ctx.Realm.BruteForceProtected {
 				return nil
@@ -43,10 +45,11 @@ var realmChecks = []Check{
 		},
 	},
 	{
-		ID:    "weak-password-policy",
-		Title: "Password policy is weak",
-		Why:   "Short or unrestricted passwords are easy to guess or crack, especially for accounts without a second factor.",
-		Fix:   fmt.Sprintf("In Authentication > Policies > Password policy, add a minimum length of at least %d characters (%d if users have no second factor).", minPasswordLength, recommendedPasswordLength),
+		ID:      "weak-password-policy",
+		Setting: "passwordPolicy",
+		Title:   "Password policy is weak",
+		Why:     "Short or unrestricted passwords are easy to guess or crack, especially for accounts without a second factor.",
+		Fix:     fmt.Sprintf("In Authentication > Policies > Password policy, add a minimum length of at least %d characters (%d if users have no second factor).", minPasswordLength, recommendedPasswordLength),
 		Run: func(ctx *Context) []Finding {
 			policy := strings.TrimSpace(ctx.Realm.PasswordPolicy)
 			if policy == "" {
@@ -67,10 +70,11 @@ var realmChecks = []Check{
 		},
 	},
 	{
-		ID:    "login-events-disabled",
-		Title: "Login events are not saved",
-		Why:   "Without saved login events there is no record of failed logins, lockouts or token use to investigate an incident.",
-		Fix:   "In Realm settings > Events > User events settings, turn on Save events and set an expiration.",
+		ID:      "login-events-disabled",
+		Setting: "eventsEnabled",
+		Title:   "Login events are not saved",
+		Why:     "Without saved login events there is no record of failed logins, lockouts or token use to investigate an incident.",
+		Fix:     "In Realm settings > Events > User events settings, turn on Save events and set an expiration.",
 		Run: func(ctx *Context) []Finding {
 			if ctx.Realm.EventsEnabled {
 				return nil
@@ -79,10 +83,11 @@ var realmChecks = []Check{
 		},
 	},
 	{
-		ID:    "admin-events-disabled",
-		Title: "Admin events are not saved",
-		Why:   "Admin events are the only record of who changed the realm's configuration. Without them, changes cannot be traced to a person.",
-		Fix:   "In Realm settings > Events > Admin events settings, turn on Save events and Include representation.",
+		ID:      "admin-events-disabled",
+		Setting: "adminEventsEnabled",
+		Title:   "Admin events are not saved",
+		Why:     "Admin events are the only record of who changed the realm's configuration. Without them, changes cannot be traced to a person.",
+		Fix:     "In Realm settings > Events > Admin events settings, turn on Save events and Include representation.",
 		Run: func(ctx *Context) []Finding {
 			switch {
 			case !ctx.Realm.AdminEventsEnabled:
