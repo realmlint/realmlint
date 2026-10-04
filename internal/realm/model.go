@@ -147,6 +147,7 @@ type User struct {
 	Groups                 []string            `json:"groups"`
 	RequiredActions        []string            `json:"requiredActions"`
 	Credentials            []Credential        `json:"credentials"`
+	Attributes             MultiValue          `json:"attributes"`
 }
 
 // IsServiceAccount reports whether the user is a client's service account.

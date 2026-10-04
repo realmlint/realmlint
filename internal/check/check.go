@@ -1,0 +1,138 @@
+// Package check runs realmlint's checks against loaded realms.
+//
+// Each check looks at one realm at a time and reports findings. A check
+// carries the static explanation and fix steps; findings carry what was
+// found and where.
+package check
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/edzordzinam/realmlint/internal/realm"
+)
+
+// Severity ranks how urgent a finding is.
+type Severity int
+
+// Severities, lowest first.
+const (
+	Low Severity = iota + 1
+	Medium
+	High
+	Critical
+)
+
+func (s Severity) String() string {
+	switch s {
+	case Low:
+		return "low"
+	case Medium:
+		return "medium"
+	case High:
+		return "high"
+	case Critical:
+		return "critical"
+	default:
+		return fmt.Sprintf("severity(%d)", int(s))
+	}
+}
+
+// Finding is one problem in one realm.
+type Finding struct {
+	CheckID  string
+	Severity Severity
+	Realm    string
+	// Object is what the finding is about, such as `client "web-spa"`.
+	// It is empty for realm-wide settings.
+	Object string
+	// Message states what was found, with the actual values.
+	Message string
+	// Why explains the risk and Fix says how to resolve it; both come from
+	// the check.
+	Why string
+	Fix string
+	// Source is the export file the realm was loaded from.
+	Source string
+}
+
+// Check is one rule.
+type Check struct {
+	ID    string
+	Title string
+	Why   string
+	Fix   string
+	Run   func(*Context) []Finding
+}
+
+// Context is what a check sees.
+type Context struct {
+	Realm *realm.Realm
+	// Realms is every realm loaded in this run, for checks that compare
+	// realms.
+	Realms []*realm.Realm
+	Now    time.Time
+}
+
+// All returns every check in a stable order.
+func All() []Check {
+	var all []Check
+	all = append(all, realmChecks...)
+	all = append(all, tokenChecks...)
+	all = append(all, clientChecks...)
+	all = append(all, accessChecks...)
+	all = append(all, expiryChecks...)
+	return all
+}
+
+// Run runs checks against every realm and returns the findings in realm
+// order, then check order.
+func Run(realms []*realm.Realm, checks []Check, now time.Time) []Finding {
+	var findings []Finding
+	for _, r := range realms {
+		ctx := &Context{Realm: r, Realms: realms, Now: now}
+		for _, c := range checks {
+			for _, f := range c.Run(ctx) {
+				f.CheckID = c.ID
+				f.Realm = r.Realm
+				f.Why = c.Why
+				f.Fix = c.Fix
+				f.Source = r.Source
+				findings = append(findings, f)
+			}
+		}
+	}
+	return findings
+}
+
+func clientObject(c *realm.Client) string {
+	return fmt.Sprintf("client %q", c.ClientID)
+}
+
+func userObject(u *realm.User) string {
+	if u.IsServiceAccount() {
+		return fmt.Sprintf("service account of client %q", u.ServiceAccountClientID)
+	}
+	return fmt.Sprintf("user %q", u.Username)
+}
+
+// humanDuration formats seconds in the largest whole unit.
+func humanDuration(seconds int) string {
+	switch {
+	case seconds != 0 && seconds%86400 == 0:
+		return plural(seconds/86400, "day")
+	case seconds != 0 && seconds%3600 == 0:
+		return plural(seconds/3600, "hour")
+	case seconds != 0 && seconds%60 == 0:
+		return plural(seconds/60, "minute")
+	default:
+		return plural(seconds, "second")
+	}
+}
+
+func plural(n int, unit string) string {
+	if n == 1 {
+		return "1 " + unit
+	}
+	return fmt.Sprintf("%d %ss", n, unit)
+}
