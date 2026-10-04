@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test -race ./...
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.14
+
+  # Runs the action from this checkout against a fixture, using a binary
+  # built from source instead of a release.
+  action:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Build realmlint
+        shell: bash
+        run: |
+          go build -o "$RUNNER_TEMP/bin/" ./cmd/realmlint
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Passes when nothing reaches fail-on
+        uses: ./
+        with:
+          paths: testdata/realms/26.8.0/single.json
+          fail-on: critical
+          sarif: "false"
+          install: "false"
+
+      - name: Fails on findings
+        id: failing
+        continue-on-error: true
+        uses: ./
+        with:
+          paths: testdata/realms/26.8.0/s*.json
+          sarif: "false"
+          install: "false"
+
+      - name: Check results
+        shell: bash
+        run: |
+          [[ "${{ steps.failing.outcome }}" == "failure" ]] || { echo "expected the action to fail"; exit 1; }
+          [[ "${{ steps.failing.outputs.exit-code }}" == "1" ]] || { echo "expected exit-code 1"; exit 1; }

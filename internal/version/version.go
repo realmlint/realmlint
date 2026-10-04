@@ -3,8 +3,8 @@ package version
 
 import "runtime/debug"
 
-// Version is set at release build time with
-// -ldflags "-X github.com/edzordzinam/realmlint/internal/version.Version=v1.0.0".
+// Version is the release version. Release builds set it through
+// main.version (see cmd/realmlint).
 var Version = "dev"
 
 // String returns the release version if one was set at build time.

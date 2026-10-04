@@ -2,20 +2,163 @@
 
 Lint and diff Keycloak realm configuration.
 
-Status: pre-release, under development.
+realmlint reads realm exports and tells you what is risky, in plain English,
+with the fix for each problem. It runs locally, makes no network calls and
+collects no telemetry. Your exports never leave your machine.
+
+```
+$ realmlint check acme-realm.json
+23 findings in 1 realm: 5 high, 11 medium, 7 low.
+
+Realm acme (acme-realm.json)
+
+  HIGH      Redirect URIs use wildcards [redirect-uri-wildcard]
+            - client "web-spa": redirect URI "*" allows any destination
+            Why: Keycloak sends authorization codes and tokens to the redirect
+                 URI. A wildcard lets an attacker choose where they go. ...
+            Fix: In the client's Settings, replace wildcard Valid redirect URIs
+                 with the exact callback URLs.
+...
+```
+
+It checks realm settings, token and session lifetimes, clients, admin access,
+and expiring keys and certificates. See the [check catalog](docs/checks.md).
+
+## Install
+
+Install script (Linux, macOS, Windows Git Bash; verifies the checksum):
+
+```
+curl -fsSL https://raw.githubusercontent.com/realmlint/realmlint/main/scripts/install.sh | bash
+```
+
+With Go:
+
+```
+go install github.com/realmlint/realmlint/cmd/realmlint@latest
+```
+
+With Docker:
+
+```
+docker run --rm -v "$PWD:/work" ghcr.io/realmlint/realmlint check acme-realm.json
+```
+
+Or download a binary from the [releases page](https://github.com/realmlint/realmlint/releases).
+
+## Get a realm export
+
+realmlint works on the JSON that Keycloak exports.
+
+- **Full export (recommended):** `kc.sh export --realm acme --file acme-realm.json`.
+  This includes users, so the admin-access checks can run. Use
+  `--dir exports/` instead of `--file` to get one file per realm; realmlint
+  reads the directory and merges the separate users files.
+- **Admin console:** Realm settings > Action > Partial export. This leaves out
+  users, so checks about admin accounts have nothing to check.
+
+Exports can contain secrets. realmlint never prints secret values, but treat
+export files with care.
+
+## Check a realm
+
+```
+realmlint check [flags] <file-or-directory>...
+```
+
+| Flag | Meaning |
+|---|---|
+| `--format text\|json\|sarif` | Output format. JSON for scripts, SARIF for code scanning. |
+| `--min-severity LEVEL` | Report only findings at or above `low`, `medium`, `high` or `critical`. |
+| `--fail-on LEVEL` | Exit 1 only for findings at or above `LEVEL`, or never with `none`. Defaults to `--min-severity`. |
+| `--top N` | Show only the N most severe findings. |
+| `--config FILE` | Ignore rules file. Defaults to `.realmlint.yaml` in the current directory. |
+
+Exit codes: `0` nothing at or above `--fail-on`, `1` findings, `2` usage error
+or unreadable input.
+
+## See what changed
+
+```
+realmlint diff before.json after.json
+```
+
+Compares two exports and lists real configuration changes. Lists are matched
+by client ID, username, alias or name, so reordering is not a change, and
+internal IDs and timestamps are ignored. Secrets show only as changed. After
+the changes, realmlint lists the findings that the change introduced or
+resolved. Exit codes: `0` no changes, `1` changes, `2` error.
+
+## Ignore findings
+
+Create `.realmlint.yaml`. Every entry needs a reason, so the next person knows
+why.
+
+```yaml
+ignore:
+  - check: full-scope-allowed
+    reason: Our clients rely on role mappers and need every role.
+  - check: redirect-uri-http
+    realm: acme
+    object: 'client "legacy-portal"'   # as printed in the output
+    reason: Internal only, retired in Q1.
+```
+
+`realm` and `object` are optional. realmlint warns about entries that no longer
+match anything.
+
+## Use in CI
+
+GitHub Actions, with findings in the Security tab:
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+
+steps:
+  - uses: actions/checkout@v7
+  - uses: realmlint/realmlint@v1
+    with:
+      paths: keycloak/realms/*.json
+      fail-on: high
+```
+
+| Input | Default | Meaning |
+|---|---|---|
+| `paths` | (required) | Files or directories, space separated; globs expand. |
+| `version` | `latest` | realmlint version to install. Pin it for repeatable runs. |
+| `min-severity` | `low` | Lowest severity to report. |
+| `fail-on` | `min-severity` | Lowest severity that fails the job, or `none`. |
+| `config` | `.realmlint.yaml` | Ignore rules file. |
+| `sarif` | `true` | Upload findings to code scanning. |
+| `install` | `true` | Set `false` to use a `realmlint` already on `PATH`. |
+
+Other CI systems: install the binary or use the Docker image, run
+`realmlint check`, and use the exit code.
+
+## Supported Keycloak versions
+
+realmlint is tested against real exports from the latest three Keycloak 26.x
+releases (currently 26.6, 26.7 and 26.8). Exports from older releases still
+load, and realmlint suggests upgrading.
 
 ## Development
 
 Requires Go 1.27+. Regenerating fixtures also requires Docker.
 
 ```
-go test ./...                  # unit tests
-golangci-lint run ./...        # lint (golangci-lint v2)
-go build ./cmd/realmlint       # build the binary
-scripts/gen-fixtures.sh        # regenerate testdata/realms from real Keycloak releases
+go test ./...                     # unit tests
+golangci-lint run ./...           # lint (golangci-lint v2)
+go run ./tools/gendocs            # regenerate docs/checks.md after changing checks
+scripts/gen-fixtures.sh           # regenerate testdata/realms from real Keycloak releases
+goreleaser release --snapshot --clean   # build release artifacts locally
 ```
 
 Test fixtures in `testdata/realms` are real `kc.sh export` output from the
-synthetic seed realm in `testdata/seed`, with secrets masked. Supported
-Keycloak versions are the latest three 26.x minor releases, listed in
-`scripts/gen-fixtures.sh`.
+synthetic seed realm in `testdata/seed`, with secrets masked. See
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).

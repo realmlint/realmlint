@@ -1,0 +1,75 @@
+name: realmlint
+description: Check Keycloak realm exports for risky settings and show findings in GitHub code scanning.
+author: realmlint
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  paths:
+    description: Realm export files or directories, separated by spaces. Globs such as exports/*.json are expanded.
+    required: true
+  version:
+    description: realmlint version to install, such as 1.0.0, or "latest". Pin a version for repeatable runs.
+    default: latest
+  min-severity:
+    description: Report only findings at or above this severity (low, medium, high, critical).
+    default: low
+  fail-on:
+    description: Fail the job for findings at or above this severity, or "none" to never fail. Defaults to min-severity.
+    default: ""
+  config:
+    description: Path to the ignore rules file. Defaults to .realmlint.yaml in the working directory, if present.
+    default: ""
+  sarif:
+    description: Upload findings to GitHub code scanning. Needs the security-events write permission.
+    default: "true"
+  install:
+    description: Install realmlint. Set to "false" to use a realmlint already on PATH.
+    default: "true"
+
+outputs:
+  exit-code:
+    description: "realmlint's exit code: 0 no failing findings, 1 failing findings, 2 error."
+    value: ${{ steps.run.outputs.exit-code }}
+  sarif-file:
+    description: Path to the SARIF file, when sarif is enabled.
+    value: ${{ steps.run.outputs.sarif-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install realmlint
+      if: inputs.install == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        RL_VERSION: ${{ inputs.version }}
+      run: |
+        bash "$GITHUB_ACTION_PATH/scripts/install.sh" -v "$RL_VERSION" -d "$RUNNER_TEMP/realmlint-bin"
+        echo "$RUNNER_TEMP/realmlint-bin" >> "$GITHUB_PATH"
+
+    - name: Run realmlint
+      id: run
+      shell: bash
+      env:
+        RL_PATHS: ${{ inputs.paths }}
+        RL_MIN_SEVERITY: ${{ inputs.min-severity }}
+        RL_FAIL_ON: ${{ inputs.fail-on }}
+        RL_CONFIG: ${{ inputs.config }}
+        RL_SARIF: ${{ inputs.sarif }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/action-run.sh"
+
+    - name: Upload to code scanning
+      if: inputs.sarif == 'true' && steps.run.outputs.sarif-file != ''
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ steps.run.outputs.sarif-file }}
+        category: realmlint
+
+    - name: Fail on findings
+      if: steps.run.outputs.exit-code == '1'
+      shell: bash
+      run: |
+        echo "::error::realmlint reported findings at or above the fail-on severity."
+        exit 1

@@ -100,14 +100,29 @@ type Context struct {
 	Now    time.Time
 }
 
+// Group is a named set of related checks.
+type Group struct {
+	Name   string
+	Checks []Check
+}
+
+// Groups returns the checks by area, in catalog order.
+func Groups() []Group {
+	return []Group{
+		{"Realm settings", realmChecks},
+		{"Tokens and sessions", tokenChecks},
+		{"Clients", clientChecks},
+		{"Access", accessChecks},
+		{"Keys, certificates and versions", expiryChecks},
+	}
+}
+
 // All returns every check in a stable order.
 func All() []Check {
 	var all []Check
-	all = append(all, realmChecks...)
-	all = append(all, tokenChecks...)
-	all = append(all, clientChecks...)
-	all = append(all, accessChecks...)
-	all = append(all, expiryChecks...)
+	for _, g := range Groups() {
+		all = append(all, g.Checks...)
+	}
 	return all
 }
 
