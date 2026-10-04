@@ -9,7 +9,7 @@ import (
 
 // The seed realm (testdata/seed/acme-realm.json) is misconfigured on
 // purpose. These are the findings it must produce on every supported
-// Keycloak version.
+// Keycloak version, one entry per finding.
 var seedFindings = []struct {
 	check, object string
 	severity      Severity
@@ -20,7 +20,8 @@ var seedFindings = []struct {
 	{"login-events-disabled", "", Low},
 	{"admin-events-disabled", "", Medium},
 	{"long-access-token", "", Medium},
-	{"long-sso-session", "", Medium},
+	{"long-sso-session", "", Medium}, // idle timeout
+	{"long-sso-session", "", Medium}, // max lifespan
 	{"offline-sessions-unbounded", "", Low},
 	{"redirect-uri-wildcard", `client "legacy-portal"`, Low},
 	{"redirect-uri-wildcard", `client "web-spa"`, High},
@@ -45,23 +46,26 @@ func TestSeedFixturesProduceExpectedFindings(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := map[[2]string]Severity{}
+			type key struct {
+				check, object string
+				severity      Severity
+			}
+			got := map[key]int{}
 			for _, f := range Run(realms, All(), now) {
-				got[[2]string{f.CheckID, f.Object}] = f.Severity
+				got[key{f.CheckID, f.Object, f.Severity}]++
 			}
 			for _, w := range seedFindings {
-				key := [2]string{w.check, w.object}
-				sev, ok := got[key]
-				switch {
-				case !ok:
-					t.Errorf("missing finding %s on %q", w.check, w.object)
-				case sev != w.severity:
-					t.Errorf("%s on %q: severity %s, want %s", w.check, w.object, sev, w.severity)
+				k := key{w.check, w.object, w.severity}
+				if got[k] == 0 {
+					t.Errorf("missing %s finding %s on %q", w.severity, w.check, w.object)
+					continue
 				}
-				delete(got, key)
+				got[k]--
 			}
-			for key, sev := range got {
-				t.Errorf("unexpected finding %s on %q (%s)", key[0], key[1], sev)
+			for k, n := range got {
+				if n > 0 {
+					t.Errorf("unexpected %s finding %s on %q (x%d)", k.severity, k.check, k.object, n)
+				}
 			}
 		})
 	}

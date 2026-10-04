@@ -7,6 +7,7 @@ package check
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/edzordzinam/realmlint/internal/realm"
@@ -38,9 +39,26 @@ func (s Severity) String() string {
 	}
 }
 
+// MarshalText implements encoding.TextMarshaler, so severities appear as
+// names in JSON.
+func (s Severity) MarshalText() ([]byte, error) {
+	return []byte(s.String()), nil
+}
+
+// ParseSeverity converts a severity name such as "high" to a Severity.
+func ParseSeverity(name string) (Severity, error) {
+	for s := Low; s <= Critical; s++ {
+		if s.String() == strings.ToLower(name) {
+			return s, nil
+		}
+	}
+	return 0, fmt.Errorf("unknown severity %q (use low, medium, high or critical)", name)
+}
+
 // Finding is one problem in one realm.
 type Finding struct {
 	CheckID  string
+	Title    string
 	Severity Severity
 	Realm    string
 	// Object is what the finding is about, such as `client "web-spa"`.
@@ -94,6 +112,7 @@ func Run(realms []*realm.Realm, checks []Check, now time.Time) []Finding {
 		for _, c := range checks {
 			for _, f := range c.Run(ctx) {
 				f.CheckID = c.ID
+				f.Title = c.Title
 				f.Realm = r.Realm
 				f.Why = c.Why
 				f.Fix = c.Fix

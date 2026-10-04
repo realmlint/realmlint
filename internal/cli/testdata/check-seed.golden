@@ -1,0 +1,167 @@
+23 findings in 1 realm: 5 high, 11 medium, 7 low.
+
+Realm acme (../../testdata/realms/26.8.0/single.json)
+
+  HIGH      HTTPS is not required [ssl-required-none]
+            - sslRequired is "none"
+            Why: With Require SSL set to none, Keycloak accepts logins and
+                 issues tokens over plain HTTP from any address, so passwords
+                 and tokens can be read on the network.
+            Fix: In Realm settings > General, set Require SSL to "external
+                 requests" or "all requests".
+
+  HIGH      Redirect URIs use wildcards [redirect-uri-wildcard]
+            - client "web-spa": redirect URI "*" allows any destination
+            Why: Keycloak sends authorization codes and tokens to the redirect
+                 URI. A wildcard lets an attacker choose where they go. A path
+                 wildcard on a fixed host is safer but still allows redirects to
+                 any page on that host.
+            Fix: In the client's Settings, replace wildcard Valid redirect URIs
+                 with the exact callback URLs.
+
+  HIGH      Service account has realm admin rights [service-account-admin]
+            - service account of client "billing-service": service account has
+              full realm admin rights
+            Why: A client's service account with realm-admin can change any
+                 setting, user or client in the realm. Anyone with the client
+                 secret has full control.
+            Fix: Remove realm-admin from the service account and grant only the
+                 specific realm-management roles it needs, such as view-users or
+                 manage-users.
+
+  HIGH      Admin account has no second factor [admin-without-mfa]
+            - user "alice": admin user has no OTP or WebAuthn credential
+            Why: Realm admins can change everything in the realm. Without a
+                 second factor, one leaked or guessed password is enough to take
+                 over.
+            Fix: Require OTP or WebAuthn for administrators: add Configure OTP
+                 as a required action for the user, or enforce a second factor
+                 in the login flow. Ignore this finding if admins log in through
+                 an identity provider that enforces MFA.
+
+  HIGH      SAML identity provider signatures are not checked [idp-signature-not-validated]
+            - identity provider "partner-saml": SAML signature validation is off
+            Why: Without signature validation, anyone who can reach Keycloak can
+                 forge a SAML response and log in as any user of that provider.
+            Fix: In the identity provider's settings, turn on Validate
+                 signatures and add the provider's signing certificate.
+
+  MEDIUM    Brute-force protection is off [brute-force-disabled]
+            - brute-force detection is disabled
+            Why: Without brute-force detection, attackers can try unlimited
+                 passwords against any account.
+            Fix: In Realm settings > Security defenses > Brute force detection,
+                 enable lockout.
+
+  MEDIUM    Password policy is weak [weak-password-policy]
+            - minimum password length is 6
+            Why: Short or unrestricted passwords are easy to guess or crack,
+                 especially for accounts without a second factor.
+            Fix: In Authentication > Policies > Password policy, add a minimum
+                 length of at least 8 characters (15 if users have no second
+                 factor).
+
+  MEDIUM    Admin events are not saved [admin-events-disabled]
+            - admin events are not saved
+            Why: Admin events are the only record of who changed the realm's
+                 configuration. Without them, changes cannot be traced to a
+                 person.
+            Fix: In Realm settings > Events > Admin events settings, turn on
+                 Save events and Include representation.
+
+  MEDIUM    Access tokens live too long [long-access-token]
+            - access token lifespan is 1 hour
+            Why: Access tokens cannot be revoked before they expire. A leaked
+                 token stays usable for its whole lifetime.
+            Fix: Set Access Token Lifespan to 15 minutes or less in Realm
+                 settings > Tokens, and remove longer per-client overrides in
+                 the client's Advanced tab.
+
+  MEDIUM    Login sessions last too long [long-sso-session]
+            - SSO session idle timeout is 1 day
+            - SSO session max lifespan is 30 days
+            Why: Refresh tokens stay valid as long as the login session. Long
+                 sessions keep stolen refresh tokens and unattended browsers
+                 logged in.
+            Fix: In Realm settings > Sessions, set SSO Session Idle to 12 hours
+                 or less and SSO Session Max to 14 days or less.
+
+  MEDIUM    Redirect URIs use plain HTTP [redirect-uri-http]
+            - client "legacy-portal": redirect URI
+              "http://portal.acme.example/*" uses plain HTTP
+            Why: Authorization codes sent to an http:// redirect URI can be read
+                 on the network.
+            Fix: Change the redirect URI to https://. Plain HTTP is only
+                 acceptable for localhost during development.
+
+  MEDIUM    CORS allows any origin [web-origins-wildcard]
+            - client "web-spa": web origins include "*"
+            Why: Web origin "*" lets JavaScript on any website call Keycloak
+                 endpoints for this client with the user's browser.
+            Fix: In the client's Settings, replace "*" in Web origins with the
+                 exact origins, or "+" to allow only the redirect URI origins.
+
+  MEDIUM    Implicit flow is enabled [implicit-flow-enabled]
+            - client "web-spa": implicit flow is enabled
+            Why: The implicit flow returns tokens in the browser URL, where they
+                 leak through history, logs and referrer headers. OAuth 2.1
+                 removes it.
+            Fix: Turn off Implicit flow in the client's Capability config and
+                 use the standard flow with PKCE.
+
+  MEDIUM    Password grant is enabled [direct-access-grants]
+            - client "web-spa": direct access grants are enabled on a public
+              client
+            Why: Direct access grants let an application collect the user's
+                 password itself, bypassing Keycloak's login page, second
+                 factors and brute-force protection. OAuth 2.1 removes this
+                 grant.
+            Fix: Turn off Direct access grants in the client's Capability
+                 config. Use the standard flow for users and client credentials
+                 for services.
+
+  MEDIUM    Public client does not require PKCE [pkce-not-enforced]
+            - client "web-spa": PKCE is not required
+            Why: Public clients have no secret, so without PKCE an intercepted
+                 authorization code can be exchanged for tokens by anyone.
+            Fix: In the client's Advanced tab, set Proof Key for Code Exchange
+                 Code Challenge Method to "S256".
+
+  LOW       Login events are not saved [login-events-disabled]
+            - user events are not saved
+            Why: Without saved login events there is no record of failed logins,
+                 lockouts or token use to investigate an incident.
+            Fix: In Realm settings > Events > User events settings, turn on Save
+                 events and set an expiration.
+
+  LOW       Offline sessions never expire [offline-sessions-unbounded]
+            - offline sessions have no maximum lifespan; they expire only after
+              30 days without use
+            Why: Offline tokens with no maximum lifespan stay valid forever as
+                 long as they are used regularly, so a leaked offline token
+                 gives permanent access.
+            Fix: In Realm settings > Sessions, enable Offline Session Max
+                 Limited and set Offline Session Max.
+
+  LOW       Redirect URIs use wildcards [redirect-uri-wildcard]
+            - client "legacy-portal": redirect URI
+              "http://portal.acme.example/*" allows any path
+            Why: Keycloak sends authorization codes and tokens to the redirect
+                 URI. A wildcard lets an attacker choose where they go. A path
+                 wildcard on a fixed host is safer but still allows redirects to
+                 any page on that host.
+            Fix: In the client's Settings, replace wildcard Valid redirect URIs
+                 with the exact callback URLs.
+
+  LOW       Tokens carry all of the user's roles [full-scope-allowed]
+            - client "billing-service": full scope allowed is on
+            - client "legacy-portal": full scope allowed is on
+            - client "mobile-app": full scope allowed is on
+            - client "web-spa": full scope allowed is on
+            Why: With Full scope allowed, every token issued to the client
+                 contains all of the user's roles, including roles for other
+                 applications. A leaked token then grants more than this client
+                 needs.
+            Fix: In the client's Client scopes > Dedicated scope > Scope tab,
+                 turn off Full scope allowed and assign only the roles the
+                 client needs.
