@@ -6,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/edzordzinam/realmlint/internal/check"
-	"github.com/edzordzinam/realmlint/internal/report"
+	"github.com/realmlint/realmlint/internal/check"
+	"github.com/realmlint/realmlint/internal/report"
 )
 
 // Result is a comparison ready to print.

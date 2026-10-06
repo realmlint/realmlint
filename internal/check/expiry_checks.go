@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edzordzinam/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/internal/realm"
 )
 
 const (

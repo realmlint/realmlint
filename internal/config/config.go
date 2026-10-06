@@ -19,7 +19,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/edzordzinam/realmlint/internal/check"
+	"github.com/realmlint/realmlint/internal/check"
 )
 
 // DefaultFile is read from the working directory when no file is given.

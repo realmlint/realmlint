@@ -3,7 +3,7 @@ package check
 import (
 	"strings"
 
-	"github.com/edzordzinam/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/internal/realm"
 )
 
 // Credential types and required actions that count as a second factor.

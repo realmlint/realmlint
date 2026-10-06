@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/edzordzinam/realmlint/internal/check"
-	"github.com/edzordzinam/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/internal/check"
+	"github.com/realmlint/realmlint/internal/realm"
 )
 
 func TestBuildRanksAcrossRealms(t *testing.T) {

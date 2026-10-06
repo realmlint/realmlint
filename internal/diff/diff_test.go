@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/edzordzinam/realmlint/internal/check"
-	"github.com/edzordzinam/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/internal/check"
+	"github.com/realmlint/realmlint/internal/realm"
 )
 
 func load(t *testing.T, content string) []*realm.Realm {

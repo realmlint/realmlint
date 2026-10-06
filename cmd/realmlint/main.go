@@ -4,8 +4,8 @@ package main
 import (
 	"os"
 
-	"github.com/edzordzinam/realmlint/internal/cli"
-	rlversion "github.com/edzordzinam/realmlint/internal/version"
+	"github.com/realmlint/realmlint/internal/cli"
+	rlversion "github.com/realmlint/realmlint/internal/version"
 )
 
 // version is set by release builds: -ldflags "-X main.version=1.0.0".

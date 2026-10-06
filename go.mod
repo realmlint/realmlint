@@ -1,4 +1,4 @@
-module github.com/edzordzinam/realmlint
+module github.com/realmlint/realmlint
 
 go 1.27.1
 
