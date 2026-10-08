@@ -24,6 +24,12 @@ Realm acme (acme-realm.json)
 It checks realm settings, token and session lifetimes, clients, admin access,
 and expiring keys and certificates. See the [check catalog](docs/checks.md).
 
+A hosted version that watches your instances continuously, records who
+changed what, and produces access reviews is planned.
+[Join the waitlist](https://realmlint.dev/?utm_source=github#hosted) to shape
+it. Step-by-step [Keycloak fixes](https://realmlint.dev/fixes/index.html?utm_source=github)
+are on the website.
+
 ## Install
 
 Install script (Linux, macOS, Windows Git Bash; verifies the checksum):
