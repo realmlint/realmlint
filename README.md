@@ -109,6 +109,41 @@ internal IDs and timestamps are ignored. Secrets show only as changed. After
 the changes, realmlint lists the findings that the change introduced or
 resolved. Exit codes: `0` no changes, `1` changes, `2` error.
 
+## Snapshot a live Keycloak (preview)
+
+`realmlint-agent` reads realms from a running Keycloak through its admin API,
+using a client with view-only permissions, and writes snapshots in the same
+shape as `kc.sh export`, with secrets masked. The `realmlint` CLI itself still
+makes no network calls; the agent connects only to your Keycloak.
+
+```
+go install github.com/realmlint/realmlint/cmd/realmlint-agent@latest
+
+REALMLINT_CLIENT_SECRET=<secret> realmlint-agent \
+  --keycloak-url https://sso.example.com --auth-realm myrealm --out snapshots/
+realmlint check snapshots/
+```
+
+It also saves the realm's admin events to `snapshots/events/`, and with
+`--interval 15m` it keeps running and refreshes the snapshots.
+
+Create the agent's client in the realm you want to snapshot:
+
+1. **Clients > Create client**: client ID `realmlint-agent`, turn on
+   **Client authentication** and **Service account roles**, and turn off
+   **Standard flow** and **Direct access grants**.
+2. On its **Service account roles** tab, **Assign role**, filter by clients,
+   and add these `realm-management` roles: `view-realm`, `view-clients`,
+   `view-users`, `view-events`, `view-identity-providers`.
+3. On **Client scopes > realmlint-agent-dedicated > Scope**, turn off
+   **Full scope allowed** and assign the same five roles. Without this step
+   every request fails with 403.
+4. Copy the secret from the **Credentials** tab into `REALMLINT_CLIENT_SECRET`.
+
+For the agent to report who changed what, turn on admin events in the realm
+(**Realm settings > Events > Admin events settings**). Tested against Keycloak
+26.6, 26.7 and 26.8.
+
 ## Ignore findings
 
 Create `.realmlint.yaml`. Every entry needs a reason, so the next person knows
