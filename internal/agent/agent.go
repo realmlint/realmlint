@@ -22,11 +22,12 @@ import (
 const usage = `realmlint-agent snapshots Keycloak realms through the admin API.
 
 Usage:
-  realmlint-agent --keycloak-url URL --out DIR [flags]
+  realmlint-agent --keycloak-url URL (--out DIR | --push-url URL) [flags]
 
-Writes each realm to DIR/<realm>.json in the shape of 'kc.sh export', with
-secrets masked, and its admin events to DIR/events/<realm>.json. Check the
-result with 'realmlint check DIR'.
+With --out, writes each realm to DIR/<realm>.json in the shape of
+'kc.sh export', with secrets masked, and its admin events to
+DIR/events/<realm>.json. Check the result with 'realmlint check DIR'.
+With --push-url, sends the same data to hosted realmlint.
 
 The agent logs in as a confidential client with a service account. Give the
 service account these realm-management roles: view-realm, view-clients,
@@ -40,6 +41,8 @@ Flags:
   --realm NAME           Realm to snapshot; repeat or comma-separate for more
                          (default: every realm the client can see)
   --out DIR              Directory to write snapshots to
+  --push-url URL         Hosted realmlint ingest URL (https; http only for
+                         localhost)
   --interval DURATION    Repeat every DURATION, for example 15m (default: run once)
   --events-since DURATION
                          On the first run, fetch admin events this far back
@@ -50,6 +53,7 @@ Flags:
 Environment:
   REALMLINT_CLIENT_ID      Client ID (default realmlint-agent)
   REALMLINT_CLIENT_SECRET  Client secret (required)
+  REALMLINT_AGENT_TOKEN    Agent token for --push-url
 `
 
 // Exit codes.
@@ -67,6 +71,8 @@ type Config struct {
 	ClientSecret string
 	Realms       []string
 	Out          string
+	PushURL      string
+	AgentToken   string
 	Interval     time.Duration
 	EventsSince  time.Duration
 }
@@ -79,11 +85,15 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return code
 	}
 	client := keycloak.NewClient(cfg.KeycloakURL, cfg.AuthRealm, cfg.ClientID, cfg.ClientSecret)
+	var push *pusher
+	if cfg.PushURL != "" {
+		push = newPusher(cfg.PushURL, cfg.AgentToken)
+	}
 
 	since := time.Now().Add(-cfg.EventsSince)
 	for {
 		started := time.Now()
-		err := runOnce(ctx, client, cfg, since, stderr)
+		err := runOnce(ctx, client, push, cfg, since, stderr)
 		if err != nil {
 			fmt.Fprintf(stderr, "realmlint-agent: %v\n", err)
 		} else {
@@ -116,6 +126,7 @@ func parse(args []string, stdout, stderr io.Writer) (Config, int) {
 		return nil
 	})
 	fs.StringVar(&cfg.Out, "out", "", "")
+	fs.StringVar(&cfg.PushURL, "push-url", "", "")
 	fs.DurationVar(&cfg.Interval, "interval", 0, "")
 	fs.DurationVar(&cfg.EventsSince, "events-since", 24*time.Hour, "")
 	fs.BoolVar(&showVersion, "version", false, "")
@@ -145,14 +156,15 @@ func parse(args []string, stdout, stderr io.Writer) (Config, int) {
 		cfg.ClientID = "realmlint-agent"
 	}
 	cfg.ClientSecret = os.Getenv("REALMLINT_CLIENT_SECRET")
+	cfg.AgentToken = os.Getenv("REALMLINT_AGENT_TOKEN")
 
 	switch {
 	case cfg.KeycloakURL == "":
 		return cfg, usageError(stderr, "--keycloak-url (or REALMLINT_KEYCLOAK_URL) is required")
 	case !strings.HasPrefix(cfg.KeycloakURL, "https://") && !strings.HasPrefix(cfg.KeycloakURL, "http://"):
 		return cfg, usageError(stderr, "--keycloak-url must start with https:// or http://")
-	case cfg.Out == "":
-		return cfg, usageError(stderr, "--out is required")
+	case cfg.Out == "" && cfg.PushURL == "":
+		return cfg, usageError(stderr, "give --out, --push-url or both")
 	case cfg.ClientSecret == "":
 		return cfg, usageError(stderr, "set REALMLINT_CLIENT_SECRET to the agent client's secret")
 	case cfg.Interval < 0 || (cfg.Interval > 0 && cfg.Interval < time.Minute):
@@ -160,12 +172,20 @@ func parse(args []string, stdout, stderr io.Writer) (Config, int) {
 	case cfg.EventsSince <= 0:
 		return cfg, usageError(stderr, "--events-since must be positive")
 	}
+	if cfg.PushURL != "" {
+		if err := validatePushURL(cfg.PushURL); err != nil {
+			return cfg, usageError(stderr, err.Error())
+		}
+		if cfg.AgentToken == "" {
+			return cfg, usageError(stderr, "set REALMLINT_AGENT_TOKEN to push to hosted realmlint")
+		}
+	}
 	return cfg, -1
 }
 
 // runOnce snapshots every requested realm and writes the files. It carries
 // on past a failing realm and reports all failures at the end.
-func runOnce(ctx context.Context, client *keycloak.Client, cfg Config, since time.Time, stderr io.Writer) error {
+func runOnce(ctx context.Context, client *keycloak.Client, push *pusher, cfg Config, since time.Time, stderr io.Writer) error {
 	realms := cfg.Realms
 	if len(realms) == 0 {
 		var err error
@@ -182,22 +202,30 @@ func runOnce(ctx context.Context, client *keycloak.Client, cfg Config, since tim
 	for _, name := range realms {
 		start := time.Now()
 		snapshot, err := client.Snapshot(ctx, name, version)
-		if err == nil {
-			err = writeJSON(filepath.Join(cfg.Out, safeName(name)+".json"), snapshot)
-		}
 		var events []any
 		if err == nil {
 			events, err = client.AdminEvents(ctx, name, since)
 		}
-		if err == nil {
-			err = writeJSON(filepath.Join(cfg.Out, "events", safeName(name)+".json"), events)
+		if err == nil && cfg.Out != "" {
+			err = writeJSON(filepath.Join(cfg.Out, safeName(name)+".json"), snapshot)
+			if err == nil {
+				err = writeJSON(filepath.Join(cfg.Out, "events", safeName(name)+".json"), events)
+			}
+		}
+		// Events go first, so the service can attribute the changes it finds
+		// in the snapshot.
+		if err == nil && push != nil {
+			err = push.events(ctx, name, events)
+			if err == nil {
+				err = push.snapshot(ctx, name, start, snapshot)
+			}
 		}
 		if err != nil {
 			fmt.Fprintf(stderr, "realm %s: %v\n", name, err)
 			failed = append(failed, name)
 			continue
 		}
-		fmt.Fprintf(stderr, "realm %s: snapshot written, %d admin events, %s\n", name, len(events), time.Since(start).Round(time.Millisecond))
+		fmt.Fprintf(stderr, "realm %s: snapshot taken, %d admin events, %s\n", name, len(events), time.Since(start).Round(time.Millisecond))
 	}
 	if len(failed) > 0 {
 		return fmt.Errorf("%d of %d realms failed: %s", len(failed), len(realms), strings.Join(failed, ", "))

@@ -97,12 +97,32 @@ func expand(paths []string) ([]string, error) {
 	return files, nil
 }
 
+// Parse reads realms from export JSON held in memory: one realm object or an
+// array of realms, as in a single export file. source names the data in
+// error messages and becomes each realm's Source. Separate users files are
+// not accepted here; use Load for export directories.
+func Parse(data []byte, source string) ([]*Realm, error) {
+	realms, uf, err := parseData(data, source)
+	if err != nil {
+		return nil, err
+	}
+	if uf != nil {
+		return nil, fmt.Errorf("%s: a separate users file, not a realm export", source)
+	}
+	return realms, nil
+}
+
 // parseFile returns either the realms in a file or its users file content.
 func parseFile(path string) ([]*Realm, *usersFile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, nil, err
 	}
+	return parseData(data, path)
+}
+
+// parseData returns either the realms in export JSON or users file content.
+func parseData(data []byte, path string) ([]*Realm, *usersFile, error) {
 	data = bytes.TrimSpace(bytes.TrimPrefix(data, utf8BOM))
 	if len(data) == 0 {
 		return nil, nil, fmt.Errorf("%s: file is empty", path)

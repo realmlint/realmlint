@@ -228,3 +228,22 @@ func writeFile(t *testing.T, name, content string) string {
 	}
 	return path
 }
+
+func TestParseFromMemory(t *testing.T) {
+	realms, err := Parse([]byte(`{"realm":"mem","clients":[{"clientId":"a"}]}`), "upload")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(realms) != 1 || realms[0].Realm != "mem" || realms[0].Source != "upload" || realms[0].Raw["clients"] == nil {
+		t.Fatalf("realms = %+v", realms)
+	}
+	if _, err := Parse([]byte(`[{"realm":"a"},{"realm":"b"}]`), "upload"); err != nil {
+		t.Errorf("array: %v", err)
+	}
+	if _, err := Parse([]byte(`{"realm":"x","users":[]}`), "upload"); err == nil || !strings.Contains(err.Error(), "users file") {
+		t.Errorf("users file should be rejected, got %v", err)
+	}
+	if _, err := Parse([]byte(`{"clients":[]}`), "upload"); err == nil {
+		t.Error("missing realm name should be rejected")
+	}
+}
