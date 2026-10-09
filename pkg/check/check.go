@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/realmlint/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/pkg/realm"
 )
 
 // Severity ranks how urgent a finding is.

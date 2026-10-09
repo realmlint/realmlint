@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/realmlint/realmlint/internal/check"
+	"github.com/realmlint/realmlint/pkg/check"
 )
 
 // SchemaVersion is the version of the JSON output format. Increase it when

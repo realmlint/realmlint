@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/realmlint/realmlint/internal/check"
+	"github.com/realmlint/realmlint/pkg/check"
 )
 
 func main() {

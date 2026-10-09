@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/realmlint/realmlint/internal/check"
-	"github.com/realmlint/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/pkg/check"
+	"github.com/realmlint/realmlint/pkg/realm"
 )
 
 func TestSARIF(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/realmlint/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/pkg/realm"
 )
 
 // The seed realm (testdata/seed/acme-realm.json) is misconfigured on

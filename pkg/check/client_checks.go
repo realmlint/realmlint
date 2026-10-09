@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/realmlint/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/pkg/realm"
 )
 
 // builtinClients are created by Keycloak in every realm. Their defaults

@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/realmlint/realmlint/internal/check"
+	"github.com/realmlint/realmlint/pkg/check"
 )
 
 // DocsURL is where each check is documented; check IDs are anchors.

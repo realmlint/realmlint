@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/realmlint/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/pkg/realm"
 )
 
 var now = time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)

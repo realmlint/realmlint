@@ -8,12 +8,12 @@ import (
 	"io"
 	"time"
 
-	"github.com/realmlint/realmlint/internal/check"
 	"github.com/realmlint/realmlint/internal/config"
-	"github.com/realmlint/realmlint/internal/diff"
-	"github.com/realmlint/realmlint/internal/realm"
-	"github.com/realmlint/realmlint/internal/report"
 	"github.com/realmlint/realmlint/internal/version"
+	"github.com/realmlint/realmlint/pkg/check"
+	"github.com/realmlint/realmlint/pkg/diff"
+	"github.com/realmlint/realmlint/pkg/realm"
+	"github.com/realmlint/realmlint/pkg/report"
 )
 
 const usage = `realmlint checks Keycloak realm configuration.

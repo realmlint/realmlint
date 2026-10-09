@@ -16,7 +16,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/realmlint/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/pkg/realm"
 )
 
 // Kind says how a value changed.

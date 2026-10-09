@@ -4,8 +4,8 @@ package report
 import (
 	"sort"
 
-	"github.com/realmlint/realmlint/internal/check"
-	"github.com/realmlint/realmlint/internal/realm"
+	"github.com/realmlint/realmlint/pkg/check"
+	"github.com/realmlint/realmlint/pkg/realm"
 )
 
 // Result is a ranked, filtered set of findings ready to print.

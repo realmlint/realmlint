@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/realmlint/realmlint/internal/check"
+	"github.com/realmlint/realmlint/pkg/check"
 )
 
 const (

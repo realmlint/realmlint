@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/realmlint/realmlint/internal/check"
+	"github.com/realmlint/realmlint/pkg/check"
 )
 
 func write(t *testing.T, content string) string {
