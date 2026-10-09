@@ -22,7 +22,7 @@ inputs:
     description: Path to the ignore rules file. Defaults to .realmlint.yaml in the working directory, if present.
     default: ""
   sarif:
-    description: Upload findings to GitHub code scanning. Needs the security-events write permission.
+    description: Upload findings to GitHub code scanning. Needs the security-events write permission, plus actions read in private repos, and code scanning enabled on the repo (free for public repos). Set to "false" otherwise.
     default: "true"
   install:
     description: Install realmlint. Set to "false" to use a realmlint already on PATH.

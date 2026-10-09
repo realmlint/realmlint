@@ -135,6 +135,7 @@ GitHub Actions, with findings in the Security tab:
 permissions:
   contents: read
   security-events: write
+  actions: read   # needed by the code scanning upload in private repos
 
 steps:
   - uses: actions/checkout@v7
@@ -151,7 +152,7 @@ steps:
 | `min-severity` | `low` | Lowest severity to report. |
 | `fail-on` | `min-severity` | Lowest severity that fails the job, or `none`. |
 | `config` | `.realmlint.yaml` | Ignore rules file. |
-| `sarif` | `true` | Upload findings to code scanning. |
+| `sarif` | `true` | Upload findings to code scanning. Code scanning is free for public repos; private repos need GitHub code security enabled, otherwise set `false`. |
 | `install` | `true` | Set `false` to use a `realmlint` already on `PATH`. |
 
 Other CI systems: install the binary or use the Docker image, run
