@@ -10,20 +10,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/realmlint/realmlint/pkg/redact"
 )
-
-// mask is the value Keycloak itself uses when it hides secrets in exports.
-const mask = "**********"
-
-var secretKeys = map[string]bool{
-	"privateKey":     true,
-	"secret":         true,
-	"secretData":     true,
-	"credentialData": true,
-	"clientSecret":   true,
-	"password":       true,
-	"bindCredential": true,
-}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -49,47 +38,9 @@ func redactFile(path string) error {
 	if err := dec.Decode(&doc); err != nil {
 		return err
 	}
-	out, err := json.MarshalIndent(redact(doc), "", "  ")
+	out, err := json.MarshalIndent(redact.Value(doc), "", "  ")
 	if err != nil {
 		return err
 	}
 	return os.WriteFile(path, append(out, '\n'), 0o644)
-}
-
-func redact(v any) any {
-	switch t := v.(type) {
-	case map[string]any:
-		for k, child := range t {
-			if secretKeys[k] {
-				t[k] = maskValue(child)
-				continue
-			}
-			t[k] = redact(child)
-		}
-		return t
-	case []any:
-		for i, child := range t {
-			t[i] = redact(child)
-		}
-		return t
-	default:
-		return v
-	}
-}
-
-// maskValue keeps the value's shape: component config values are string
-// lists, everything else is a plain string.
-func maskValue(v any) any {
-	switch t := v.(type) {
-	case []any:
-		masked := make([]any, len(t))
-		for i := range t {
-			masked[i] = mask
-		}
-		return masked
-	case string:
-		return mask
-	default:
-		return v
-	}
 }
