@@ -52,6 +52,20 @@ docker run --rm -v "$PWD:/work" ghcr.io/realmlint/realmlint check acme-realm.jso
 
 Or download a binary from the [releases page](https://github.com/realmlint/realmlint/releases).
 
+### Verify a download
+
+Every release file and the container image carry a signed build provenance
+attestation, made by the release workflow in this repository. With the
+GitHub CLI:
+
+```
+gh attestation verify realmlint_1.0.0_linux_amd64.tar.gz --repo realmlint/realmlint
+gh attestation verify oci://ghcr.io/realmlint/realmlint:1.0.0 --repo realmlint/realmlint
+```
+
+Each archive also has an SPDX SBOM (`<archive>.sbom.json`) listing what is
+inside it, and `checksums.txt` covers the archives and the SBOMs.
+
 ## Get a realm export
 
 realmlint works on the JSON that Keycloak exports.

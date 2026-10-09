@@ -13,6 +13,15 @@ one.
 You should get a reply within five working days. We will tell you when a fix
 is released and credit you in the release notes unless you ask us not to.
 
+## Verifying releases
+
+Release archives, SBOMs, `checksums.txt` and the container image are built
+only by `.github/workflows/release.yml` and carry signed build provenance.
+Check them with `gh attestation verify <file> --repo realmlint/realmlint`, or
+`gh attestation verify oci://ghcr.io/realmlint/realmlint:<version> --repo realmlint/realmlint`
+for the image. A file that fails verification did not come from this
+repository's release workflow; please report where you got it.
+
 ## Supported versions
 
 Security fixes go into the latest release only.

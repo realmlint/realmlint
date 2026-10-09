@@ -37,6 +37,10 @@ archives:
 checksum:
   name_template: checksums.txt
 
+# One SPDX SBOM per archive, made by syft and published with the release.
+sboms:
+  - artifacts: archive
+
 dockers_v2:
   - images:
       - ghcr.io/realmlint/realmlint
