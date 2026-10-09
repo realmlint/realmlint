@@ -129,7 +129,8 @@ match anything.
 
 ## Use in CI
 
-GitHub Actions, with findings in the Security tab:
+GitHub Actions, with findings in the Security tab. The action is on the
+[GitHub Marketplace](https://github.com/marketplace/actions/realmlint):
 
 ```yaml
 permissions:
