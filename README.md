@@ -61,6 +61,40 @@ its clients, roles, groups and identity providers instead of creating them.
 Secrets become variables. Users, client scopes, flows and role mappings are
 not exported.
 
+With the hosted realmlint, send the state after each apply and the portal
+shows settings changed in Keycloak outside Terraform, and who changed them.
+In GitHub Actions:
+
+```yaml
+- run: terraform apply -auto-approve
+- uses: realmlint/realmlint/terraform-state@v1
+  with:
+    url: ${{ vars.REALMLINT_URL }}          # as on the instance's Terraform drift tab
+    token: ${{ secrets.REALMLINT_AGENT_TOKEN }}
+    working-directory: infra/keycloak
+```
+
+| Input | Default | Meaning |
+|---|---|---|
+| `url` | (required) | The portal address. |
+| `token` | (required) | The agent token of the Keycloak instance. Use a secret. |
+| `working-directory` | `.` | Where `terraform init` ran; the action runs `terraform show -json` there. |
+| `state-file` | | Send this `terraform show -json` output instead. |
+| `terraform` | `terraform` | The Terraform command. |
+| `fail-on-error` | `false` | Fail the job if the state cannot be sent. Otherwise the step warns. |
+
+Outputs: `resources` (how many were stored) and `realms`. The state is
+gzipped and deleted from the runner after sending; the portal keeps only
+the settings it compares and drops secrets. Elsewhere, post the state
+yourself:
+
+```
+terraform show -json | curl --fail -sS -X POST \
+  -H "Authorization: Bearer $REALMLINT_AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data-binary @- "$REALMLINT_URL/v1/terraform-state"
+```
+
 ## Install
 
 Install script (Linux, macOS, Windows Git Bash; verifies the checksum):

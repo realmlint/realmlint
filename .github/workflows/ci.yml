@@ -82,3 +82,46 @@ jobs:
         run: |
           [[ "${{ steps.failing.outcome }}" == "failure" ]] || { echo "expected the action to fail"; exit 1; }
           [[ "${{ steps.failing.outputs.exit-code }}" == "1" ]] || { echo "expected exit-code 1"; exit 1; }
+
+  # Runs the terraform-state action from this checkout against a stub of the
+  # portal endpoint.
+  terraform-state-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Start the stub portal
+        run: |
+          python3 scripts/stub-portal.py 8765 &
+          for _ in $(seq 20); do curl -s -o /dev/null http://127.0.0.1:8765/ && break; sleep 0.5; done
+
+      - name: Sends the state
+        id: sent
+        uses: ./terraform-state
+        with:
+          url: http://127.0.0.1:8765/
+          token: test-token
+          state-file: testdata/terraform/state.json
+          fail-on-error: "true"
+
+      - name: Fails on a wrong token when asked to
+        id: refused
+        continue-on-error: true
+        uses: ./terraform-state
+        with:
+          url: http://127.0.0.1:8765
+          token: wrong
+          state-file: testdata/terraform/state.json
+          fail-on-error: "true"
+
+      - name: Only warns by default
+        uses: ./terraform-state
+        with:
+          url: http://127.0.0.1:8765
+          token: wrong
+          state-file: testdata/terraform/state.json
+
+      - name: Check results
+        run: |
+          [[ "${{ steps.sent.outputs.resources }}" == "1" ]] || { echo "expected 1 resource"; exit 1; }
+          [[ "${{ steps.sent.outputs.realms }}" == "acme" ]] || { echo "expected realm acme"; exit 1; }
+          [[ "${{ steps.refused.outcome }}" == "failure" ]] || { echo "expected the wrong token to fail"; exit 1; }

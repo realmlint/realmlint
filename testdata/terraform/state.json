@@ -1,0 +1,23 @@
+{
+  "format_version": "1.0",
+  "terraform_version": "1.11.4",
+  "values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "keycloak_openid_client.web_spa",
+          "mode": "managed",
+          "type": "keycloak_openid_client",
+          "name": "web_spa",
+          "provider_name": "registry.terraform.io/keycloak/keycloak",
+          "values": {
+            "realm_id": "acme",
+            "client_id": "web-spa",
+            "access_type": "PUBLIC",
+            "valid_redirect_uris": ["https://app.acme.example/*"]
+          }
+        }
+      ]
+    }
+  }
+}

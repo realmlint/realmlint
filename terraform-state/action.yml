@@ -1,0 +1,49 @@
+name: realmlint Terraform state
+description: Send Terraform state to realmlint after apply, so the portal shows Keycloak settings changed outside Terraform.
+author: realmlint
+branding:
+  icon: upload-cloud
+  color: blue
+
+inputs:
+  url:
+    description: The realmlint portal address, as shown on the instance's Terraform drift tab.
+    required: true
+  token:
+    description: The agent token of the Keycloak instance this state manages. Pass it from a secret.
+    required: true
+  working-directory:
+    description: The Terraform directory, where terraform init has run.
+    default: "."
+  state-file:
+    description: Send this file (the output of terraform show -json) instead of running terraform show.
+    default: ""
+  terraform:
+    description: The Terraform command to run.
+    default: terraform
+  fail-on-error:
+    description: Fail the job when the state cannot be sent. By default the step warns and the job goes on, since apply has already happened.
+    default: "false"
+
+outputs:
+  resources:
+    description: How many keycloak/keycloak resources the portal stored.
+    value: ${{ steps.post.outputs.resources }}
+  realms:
+    description: The realms the state manages, comma separated.
+    value: ${{ steps.post.outputs.realms }}
+
+runs:
+  using: composite
+  steps:
+    - name: Send Terraform state to realmlint
+      id: post
+      shell: bash
+      env:
+        RL_URL: ${{ inputs.url }}
+        RL_TOKEN: ${{ inputs.token }}
+        RL_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        RL_STATE_FILE: ${{ inputs.state-file }}
+        RL_TERRAFORM: ${{ inputs.terraform }}
+        RL_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+      run: bash "$GITHUB_ACTION_PATH/../scripts/post-terraform-state.sh"
