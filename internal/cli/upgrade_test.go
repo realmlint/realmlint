@@ -84,3 +84,25 @@ func TestUpgradeNeedsAVersion(t *testing.T) {
 		t.Errorf("help: %d %s", code, stdout)
 	}
 }
+
+func TestUpgradeMarkdown(t *testing.T) {
+	code, stdout, stderr := run("upgrade", "--format", "markdown", olderExport)
+	if code != ExitFindings {
+		t.Fatalf("exit code = %d; stderr: %s", code, stderr)
+	}
+	for _, want := range []string{
+		"### Upgrading Keycloak 26.6.4 to 26.8.0",
+		"- **['Full scope allowed' switch on clients is deprecated](https://www.keycloak.org/docs/latest/upgrading/index.html#full-scope-allowed-switch-on-clients-is-deprecated)** · deprecated · 26.8.0",
+		"  - acme: Client web-spa: Full scope allowed is on",
+		"| Version | Change |",
+		"<details><summary>Other notable changes (",
+		"initiating\\_idp logout parameter",
+	} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("markdown lacks %q", want)
+		}
+	}
+	if md("a|b <x>") != `a\|b &lt;x&gt;` {
+		t.Errorf("md escaping: %q", md("a|b <x>"))
+	}
+}

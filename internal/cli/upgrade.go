@@ -33,7 +33,8 @@ Flags:
                         guide lists, currently %s)
   --all                 Also list deprecations, changes checked with no impact
                         and other notable changes
-  --format text|json    Output format (default text)
+  --format FORMAT       text, json or markdown (for CI job summaries)
+                        (default text)
   -h, --help            Show this help
 
 Exit codes:
@@ -58,8 +59,8 @@ func runUpgrade(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return usageError(stderr, "upgrade", err.Error())
 	}
-	if *format != "text" && *format != "json" {
-		return usageError(stderr, "upgrade", fmt.Sprintf("unknown format %q (use text or json)", *format))
+	if *format != "text" && *format != "json" && *format != "markdown" {
+		return usageError(stderr, "upgrade", fmt.Sprintf("unknown format %q (use text, json or markdown)", *format))
 	}
 	if len(paths) == 0 {
 		return usageError(stderr, "upgrade", "no realm export files or directories given")
@@ -84,7 +85,8 @@ func runUpgrade(args []string, stdout, stderr io.Writer) int {
 		return usageError(stderr, "upgrade", err.Error())
 	}
 
-	if *format == "json" {
+	switch *format {
+	case "json":
 		enc := json.NewEncoder(stdout)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(struct {
@@ -94,7 +96,9 @@ func runUpgrade(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "realmlint: %v\n", err)
 			return ExitUsage
 		}
-	} else {
+	case "markdown":
+		writeUpgradeMarkdown(stdout, rep)
+	default:
 		writeUpgrade(stdout, rep, *all)
 	}
 	for _, it := range rep.Items {
@@ -120,22 +124,85 @@ func oldestVersion(realms []*realm.Realm) string {
 	return oldest
 }
 
-func writeUpgrade(w io.Writer, rep upgrade.Report, all bool) {
-	var affected, read, deprecated, noImpact, other []upgrade.Advice
+// upgradeGroups sorts a report's items the way both outputs show them.
+type upgradeGroups struct {
+	affected, read, deprecated, noImpact, other []upgrade.Advice
+}
+
+func groupUpgrade(rep upgrade.Report) upgradeGroups {
+	var g upgradeGroups
 	for _, it := range rep.Items {
 		switch {
 		case it.Status == upgrade.Affected:
-			affected = append(affected, it)
+			g.affected = append(g.affected, it)
 		case it.Status == upgrade.Clear:
-			noImpact = append(noImpact, it)
+			g.noImpact = append(g.noImpact, it)
 		case it.Category == "breaking" || it.Category == "removed":
-			read = append(read, it)
+			g.read = append(g.read, it)
 		case it.Category == "deprecated":
-			deprecated = append(deprecated, it)
+			g.deprecated = append(g.deprecated, it)
 		default:
-			other = append(other, it)
+			g.other = append(g.other, it)
 		}
 	}
+	return g
+}
+
+// writeUpgradeMarkdown writes the report for a CI job summary or pull
+// request comment, with links to the guide. The rarely needed groups are
+// folded away.
+func writeUpgradeMarkdown(w io.Writer, rep upgrade.Report) {
+	g := groupUpgrade(rep)
+	fmt.Fprintf(w, "### Upgrading Keycloak %s to %s\n\n", md(rep.From), md(rep.To))
+	fmt.Fprintf(w, "%d changes in Keycloak's [upgrading guide](%s).", len(rep.Items), upgrade.GuideURL)
+	if upgrade.Compare(rep.From, upgrade.Oldest) < 0 {
+		fmt.Fprintf(w, " The list starts at %s; for older versions read the guide's earlier sections too.", upgrade.Oldest)
+	}
+	fmt.Fprintln(w)
+	if len(rep.Items) == 0 {
+		return
+	}
+	fmt.Fprintf(w, "\n#### Affects your realms (%d)\n\n", len(g.affected))
+	if len(g.affected) == 0 {
+		fmt.Fprintln(w, "No checked change touches these realms. Still read the breaking changes.")
+	}
+	for _, it := range g.affected {
+		fmt.Fprintf(w, "- **[%s](%s)** · %s · %s\n", md(it.Title), it.URL, it.Category, it.Version)
+		for _, h := range it.Hits {
+			fmt.Fprintf(w, "  - %s: %s: %s\n", md(h.Realm), md(h.Object), md(h.Detail))
+		}
+	}
+	table := func(items []upgrade.Advice) {
+		fmt.Fprint(w, "| Version | Change |\n|---|---|\n")
+		for _, it := range items {
+			fmt.Fprintf(w, "| %s | [%s](%s) |\n", it.Version, md(it.Title), it.URL)
+		}
+	}
+	if len(g.read) > 0 {
+		fmt.Fprintf(w, "\n#### Breaking or removed, read before upgrading (%d)\n\n", len(g.read))
+		table(g.read)
+	}
+	for _, s := range []struct {
+		title string
+		items []upgrade.Advice
+	}{{"Deprecated", g.deprecated}, {"Checked, no impact", g.noImpact}, {"Other notable changes", g.other}} {
+		if len(s.items) == 0 {
+			continue
+		}
+		fmt.Fprintf(w, "\n<details><summary>%s (%d)</summary>\n\n", s.title, len(s.items))
+		table(s.items)
+		fmt.Fprintln(w, "\n</details>")
+	}
+}
+
+// md escapes text for Markdown: table pipes, emphasis and HTML.
+var mdReplacer = strings.NewReplacer("|", "\\|", "*", "\\*", "_", "\\_", "`", "\\`", "[", "\\[", "]", "\\]", "<", "&lt;", ">", "&gt;")
+
+func md(s string) string { return mdReplacer.Replace(s) }
+
+func writeUpgrade(w io.Writer, rep upgrade.Report, all bool) {
+	g := groupUpgrade(rep)
+	affected, read, deprecated, noImpact, other := g.affected, g.read, g.deprecated, g.noImpact, g.other
 	fmt.Fprintf(w, "Upgrading Keycloak %s to %s: %d changes in Keycloak's upgrading guide.\n", rep.From, rep.To, len(rep.Items))
 	if upgrade.Compare(rep.From, upgrade.Oldest) < 0 {
 		fmt.Fprintf(w, "The list starts at %s; for older versions read the guide's earlier sections too.\n", upgrade.Oldest)

@@ -24,6 +24,15 @@ inputs:
   sarif:
     description: Upload findings to GitHub code scanning. Needs the security-events write permission, plus actions read in private repos, and code scanning enabled on the repo (free for public repos). Set to "false" otherwise.
     default: "true"
+  upgrade-to:
+    description: Also list what upgrading Keycloak to this version changes (from Keycloak's upgrading guide) and which changes touch these realms, such as 26.8.0, or "latest". Off when empty.
+    default: ""
+  upgrade-from:
+    description: The Keycloak version you run. Defaults to the exports' keycloakVersion.
+    default: ""
+  fail-on-upgrade:
+    description: Fail the job when a change in the upgrade touches the realms.
+    default: "false"
   install:
     description: Install realmlint. Set to "false" to use a realmlint already on PATH.
     default: "true"
@@ -35,6 +44,9 @@ outputs:
   sarif-file:
     description: Path to the SARIF file, when sarif is enabled.
     value: ${{ steps.run.outputs.sarif-file }}
+  upgrade-exit-code:
+    description: "realmlint upgrade's exit code, when upgrade-to is set: 0 nothing checked touches the realms, 1 a change does, 2 error."
+    value: ${{ steps.upgrade.outputs.upgrade-exit-code }}
 
 runs:
   using: composite
@@ -60,6 +72,16 @@ runs:
         RL_SARIF: ${{ inputs.sarif }}
       run: bash "$GITHUB_ACTION_PATH/scripts/action-run.sh"
 
+    - name: Upgrade advice
+      id: upgrade
+      if: inputs.upgrade-to != ''
+      shell: bash
+      env:
+        RL_PATHS: ${{ inputs.paths }}
+        RL_UPGRADE_TO: ${{ inputs.upgrade-to }}
+        RL_UPGRADE_FROM: ${{ inputs.upgrade-from }}
+      run: bash "$GITHUB_ACTION_PATH/scripts/action-upgrade.sh"
+
     - name: Upload to code scanning
       if: inputs.sarif == 'true' && steps.run.outputs.sarif-file != ''
       uses: github/codeql-action/upload-sarif@v4
@@ -72,4 +94,13 @@ runs:
       shell: bash
       run: |
         echo "::error::realmlint reported findings at or above the fail-on severity."
+        exit 1
+
+    - name: Fail on upgrade impact
+      if: inputs.fail-on-upgrade == 'true' && steps.upgrade.outputs.upgrade-exit-code == '1'
+      shell: bash
+      env:
+        RL_UPGRADE_TO: ${{ inputs.upgrade-to }}
+      run: |
+        echo "::error::Upgrading Keycloak to $RL_UPGRADE_TO changes things these realms use. See the job summary."
         exit 1

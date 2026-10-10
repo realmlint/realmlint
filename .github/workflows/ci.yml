@@ -77,11 +77,37 @@ jobs:
           sarif: "false"
           install: "false"
 
+      - name: Upgrade advice without impact passes
+        id: upgrade-clear
+        uses: ./
+        with:
+          paths: testdata/realms/26.6.4/single.json
+          fail-on: none
+          sarif: "false"
+          install: "false"
+          upgrade-to: 26.7.0
+          fail-on-upgrade: "true"
+
+      - name: Fails on upgrade impact when asked to
+        id: upgrade-affected
+        continue-on-error: true
+        uses: ./
+        with:
+          paths: testdata/realms/26.6.4/single.json
+          fail-on: none
+          sarif: "false"
+          install: "false"
+          upgrade-to: latest
+          fail-on-upgrade: "true"
+
       - name: Check results
         shell: bash
         run: |
           [[ "${{ steps.failing.outcome }}" == "failure" ]] || { echo "expected the action to fail"; exit 1; }
           [[ "${{ steps.failing.outputs.exit-code }}" == "1" ]] || { echo "expected exit-code 1"; exit 1; }
+          [[ "${{ steps.upgrade-clear.outputs.upgrade-exit-code }}" == "0" ]] || { echo "expected upgrade-exit-code 0 up to 26.7.0"; exit 1; }
+          [[ "${{ steps.upgrade-affected.outcome }}" == "failure" ]] || { echo "expected the upgrade to latest to fail"; exit 1; }
+          [[ "${{ steps.upgrade-affected.outputs.upgrade-exit-code }}" == "1" ]] || { echo "expected upgrade-exit-code 1"; exit 1; }
 
   # Runs the terraform-state action from this checkout against a stub of the
   # portal endpoint.

@@ -111,7 +111,9 @@ as wildcard hostnames in redirect URIs, deprecated client switches or
 Twitter identity providers, and names the objects they affect; server
 options, APIs and themes are listed for you to read. It exits 1 when a
 change touches the realms. `--all` also lists deprecations and other
-notable changes; `--format json` gives the full report. Upgrades from any
+notable changes; `--format json` gives the full report and `--format
+markdown` one for CI job summaries (the GitHub Action's `upgrade-to` input
+uses it). Upgrades from any
 26.x release are covered.
 
 ## Install
@@ -273,7 +275,21 @@ steps:
 | `fail-on` | `min-severity` | Lowest severity that fails the job, or `none`. |
 | `config` | `.realmlint.yaml` | Ignore rules file. |
 | `sarif` | `true` | Upload findings to code scanning. Code scanning is free for public repos; private repos need GitHub code security enabled, otherwise set `false`. |
+| `upgrade-to` | | Also list what upgrading Keycloak to this version changes, such as `26.8.0` or `latest`, and which changes touch the realms. The list goes to the job summary with links to Keycloak's upgrading guide. |
+| `upgrade-from` | the exports' version | The Keycloak version you run. |
+| `fail-on-upgrade` | `false` | Fail the job when a change in the upgrade touches the realms. |
 | `install` | `true` | Set `false` to use a `realmlint` already on `PATH`. |
+
+Before a Keycloak upgrade, a pull request that bumps the version can fail
+when the upgrade affects the realms:
+
+```yaml
+  - uses: realmlint/realmlint@v1
+    with:
+      paths: keycloak/realms/*.json
+      upgrade-to: 26.8.0
+      fail-on-upgrade: true
+```
 
 Other CI systems: install the binary or use the Docker image, run
 `realmlint check`, and use the exit code.
