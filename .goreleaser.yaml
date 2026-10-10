@@ -22,9 +22,24 @@ builds:
     ldflags:
       - -s -w -X main.version={{ .Version }}
     mod_timestamp: "{{ .CommitTimestamp }}"
+  # The agent for hosted realmlint, for the same platforms.
+  - id: realmlint-agent
+    main: ./cmd/realmlint-agent
+    binary: realmlint-agent
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:
-  - formats: [tar.gz]
+  - id: realmlint
+    ids: [realmlint]
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
         formats: [zip]
@@ -33,6 +48,16 @@ archives:
       - LICENSE
       - README.md
       - docs/checks.md
+  - id: realmlint-agent
+    ids: [realmlint-agent]
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "realmlint-agent_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
 
 checksum:
   name_template: checksums.txt

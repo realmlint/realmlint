@@ -221,6 +221,8 @@ makes no network calls; the agent connects only to your Keycloak.
 
 ```
 go install github.com/realmlint/realmlint/cmd/realmlint-agent@latest
+# or a release binary (Linux, macOS, Windows; amd64 and arm64), checksum-verified:
+curl -fsSL https://raw.githubusercontent.com/realmlint/realmlint/main/scripts/install.sh | bash -s -- -b realmlint-agent
 
 REALMLINT_CLIENT_SECRET=<secret> realmlint-agent \
   --keycloak-url https://sso.example.com --auth-realm myrealm --out snapshots/

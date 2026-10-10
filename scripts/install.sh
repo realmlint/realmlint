@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Installs a realmlint release binary after verifying its checksum.
 #
-# Usage: install.sh [-v VERSION] [-d DIR]
+# Usage: install.sh [-b BINARY] [-v VERSION] [-d DIR]
+#   -b BINARY   realmlint (default) or realmlint-agent
 #   -v VERSION  release to install, such as 1.0.0, or "latest" (default)
 #   -d DIR      directory to install into (default: ~/.local/bin)
 #
@@ -15,18 +16,25 @@ repo="realmlint/realmlint"
 base="${REALMLINT_DOWNLOAD_BASE:-https://github.com/$repo/releases/download}"
 version="latest"
 dir="${HOME}/.local/bin"
+name="realmlint"
 
-usage() { sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; }
 fail() { echo "install.sh: $*" >&2; exit 1; }
 
-while getopts "v:d:h" opt; do
+while getopts "b:v:d:h" opt; do
   case "$opt" in
+    b) name="$OPTARG" ;;
     v) version="$OPTARG" ;;
     d) dir="$OPTARG" ;;
     h) usage; exit 0 ;;
     *) usage >&2; exit 2 ;;
   esac
 done
+
+case "$name" in
+  realmlint | realmlint-agent) ;;
+  *) fail "unknown binary $name (use realmlint or realmlint-agent)" ;;
+esac
 
 case "$(uname -s)" in
   Linux) os=linux ;;
@@ -52,12 +60,12 @@ fi
 version="${version#v}"
 
 ext=tar.gz
-binary=realmlint
+binary="$name"
 if [[ "$os" == windows ]]; then
   ext=zip
-  binary=realmlint.exe
+  binary="$name.exe"
 fi
-archive="realmlint_${version}_${os}_${arch}.${ext}"
+archive="${name}_${version}_${os}_${arch}.${ext}"
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "${tmp:?}"' EXIT
@@ -86,4 +94,4 @@ fi
 mkdir -p "$dir"
 cp "$tmp/out/$binary" "$dir/$binary"
 chmod +x "$dir/$binary"
-echo "Installed realmlint $version to $dir/$binary"
+echo "Installed $name $version to $dir/$binary"
