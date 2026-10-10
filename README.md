@@ -30,6 +30,37 @@ changed what, and produces access reviews is planned.
 it. Step-by-step [Keycloak fixes](https://realmlint.dev/fixes/index.html?utm_source=github)
 are on the website.
 
+
+## Terraform
+
+If you manage Keycloak with Terraform (`keycloak/keycloak` provider),
+realmlint can check a plan before you apply it:
+
+```
+terraform plan -out plan.out
+terraform show -json plan.out > plan.json
+realmlint terraform check --new-only plan.json
+```
+
+Findings name the resource that declares them, for example
+`(keycloak_openid_client.web)`. `--new-only` reports only what the plan
+introduces, so CI fails on new problems rather than existing ones. Only
+checks whose inputs Terraform declares run: realm security, token and session
+settings, events, OpenID clients, identity providers and service account
+admin roles.
+
+To start managing an existing realm with Terraform:
+
+```
+realmlint terraform export --realm acme ./export > keycloak.tf
+terraform init && terraform plan
+```
+
+The configuration has `import` blocks, so the first plan adopts the realm,
+its clients, roles, groups and identity providers instead of creating them.
+Secrets become variables. Users, client scopes, flows and role mappings are
+not exported.
+
 ## Install
 
 Install script (Linux, macOS, Windows Git Bash; verifies the checksum):
