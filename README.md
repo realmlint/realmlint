@@ -83,6 +83,23 @@ In GitHub Actions:
 | `terraform` | `terraform` | The Terraform command. |
 | `fail-on-error` | `false` | Fail the job if the state cannot be sent. Otherwise the step warns. |
 
+In GitLab CI, include the template and add its script after apply (the
+image needs `curl` and `gzip`; set `REALMLINT_URL` and a masked
+`REALMLINT_AGENT_TOKEN` as CI/CD variables):
+
+```yaml
+include:
+  - remote: https://raw.githubusercontent.com/realmlint/realmlint/v1/ci/gitlab/terraform-state.yml
+
+apply:
+  script:
+    - terraform apply -auto-approve
+    - !reference [.realmlint-terraform-state, script]
+```
+
+`REALMLINT_TF_ROOT`, `REALMLINT_STATE_FILE` and `REALMLINT_FAIL_ON_ERROR`
+work like the action's inputs; the template's comments say more.
+
 Outputs: `resources` (how many were stored) and `realms`. The state is
 gzipped and deleted from the runner after sending; the portal keeps only
 the settings it compares and drops secrets. Elsewhere, post the state

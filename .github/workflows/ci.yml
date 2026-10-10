@@ -151,3 +151,6 @@ jobs:
           [[ "${{ steps.sent.outputs.resources }}" == "1" ]] || { echo "expected 1 resource"; exit 1; }
           [[ "${{ steps.sent.outputs.realms }}" == "acme" ]] || { echo "expected realm acme"; exit 1; }
           [[ "${{ steps.refused.outcome }}" == "failure" ]] || { echo "expected the wrong token to fail"; exit 1; }
+
+      - name: GitLab template runs in an Alpine image
+        run: sh scripts/test-gitlab-template.sh
