@@ -121,6 +121,9 @@ func TestBackupToS3(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The bucket is the customer's; the test makes its own (an existing one
+	// is fine).
+	_, _ = store.(*s3Store).client.CreateBucket(ctx, &s3.CreateBucketInput{Bucket: &bucket})
 	at := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
 	if err := backup(ctx, store, map[string]map[string]any{"acme": {"realm": "acme"}}, at); err != nil {
 		t.Fatal(err)
