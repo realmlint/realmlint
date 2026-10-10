@@ -278,6 +278,10 @@ ones. For S3-compatible storage (MinIO, Ceph, ...) set
 `REALMLINT_BACKUP_S3_ENDPOINT`. Secrets are masked, so after a restore,
 set client and identity provider secrets again.
 
+[Setting up backups](docs/backups.md) walks through the S3 bucket, the IAM
+policy, credentials on EC2, ECS, EKS, Docker and systemd, S3-compatible
+services, directories, restoring a realm and common errors.
+
 ## Ignore findings
 
 Create `.realmlint.yaml`. Every entry needs a reason, so the next person knows
