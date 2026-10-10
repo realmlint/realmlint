@@ -102,3 +102,43 @@ func (p *pusher) post(ctx context.Context, path string, v any) error {
 	}
 	return nil
 }
+
+// backupsOn asks realmlint whether backups are on for this instance.
+func (p *pusher) backupsOn(ctx context.Context) (bool, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.base+"/v1/agent-config", nil)
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Authorization", "Bearer "+p.token)
+	req.Header.Set("User-Agent", "realmlint-agent/"+version.String())
+	resp, err := p.http.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode == http.StatusNotFound {
+		return false, nil // an older service without backups
+	}
+	if resp.StatusCode/100 != 2 {
+		return false, fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	var cfg struct {
+		Backups bool `json:"backups"`
+	}
+	err = json.NewDecoder(io.LimitReader(resp.Body, 1<<16)).Decode(&cfg)
+	return cfg.Backups, err
+}
+
+// backupReport tells realmlint how a backup went; the target never carries
+// credentials.
+type backupReport struct {
+	At     time.Time `json:"at"`
+	Target string    `json:"target"`
+	Realms int       `json:"realms"`
+	Error  string    `json:"error,omitempty"`
+}
+
+// backupStatus reports a backup; a failure to report is not fatal.
+func (p *pusher) backupStatus(ctx context.Context, r backupReport) {
+	_ = p.post(ctx, "/v1/backup-status", r)
+}

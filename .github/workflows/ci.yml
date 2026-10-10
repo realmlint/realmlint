@@ -41,6 +41,17 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go test -tags integration -timeout 20m ./pkg/keycloak
+      - name: Agent backups to S3 (S3Mock)
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_REGION: us-east-1
+          REALMLINT_TEST_S3_ENDPOINT: http://127.0.0.1:19090
+          REALMLINT_TEST_S3_BUCKET: backups
+        run: |
+          docker run -d -p 127.0.0.1:19090:9090 -e initialBuckets=backups adobe/s3mock
+          for _ in $(seq 60); do curl -s -o /dev/null http://127.0.0.1:19090/ && break; sleep 1; done
+          go test -count=1 -run TestBackupToS3 -v ./internal/agent
 
   # Runs the action from this checkout against a fixture, using a binary
   # built from source instead of a release.

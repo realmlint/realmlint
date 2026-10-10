@@ -247,6 +247,25 @@ For the agent to report who changed what, turn on admin events in the realm
 (**Realm settings > Events > Admin events settings**). Tested against Keycloak
 26.6, 26.7 and 26.8.
 
+### Backups to your own storage
+
+With hosted realmlint on the Team plan, the agent can also write each
+realm's export, with secrets masked, to storage you own: a directory (for
+example a mounted volume) or an S3 bucket, using the agent's own AWS
+credentials. realmlint never holds them.
+
+```
+realmlint-agent --keycloak-url https://sso.example.com --push-url https://... \
+  --interval 15m --backup-to s3://my-bucket/keycloak/prod
+```
+
+Backups run once a day (`--backup-every`) while they are switched on for the
+instance in realmlint, which shows the last backup and any error. Files are
+named `<realm>/<UTC time>.json`; use a bucket lifecycle rule to expire old
+ones. For S3-compatible storage (MinIO, Ceph, ...) set
+`REALMLINT_BACKUP_S3_ENDPOINT`. Secrets are masked, so after a restore,
+set client and identity provider secrets again.
+
 ## Ignore findings
 
 Create `.realmlint.yaml`. Every entry needs a reason, so the next person knows

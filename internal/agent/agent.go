@@ -47,6 +47,13 @@ Flags:
   --events-since DURATION
                          On the first run, fetch admin events this far back
                          (default 24h); later runs continue from the last run
+  --backup-to TARGET     Also write each realm's export (secrets masked) to
+                         your own storage: a directory or s3://bucket/prefix,
+                         using this environment's AWS credentials (or
+                         REALMLINT_BACKUP_TO). With --push-url, only while
+                         backups are on for the instance in realmlint.
+  --backup-every DURATION
+                         How often to back up (default 24h)
   -h, --help             Show this help
   -v, --version          Print the version
 
@@ -54,6 +61,9 @@ Environment:
   REALMLINT_CLIENT_ID      Client ID (default realmlint-agent)
   REALMLINT_CLIENT_SECRET  Client secret (required)
   REALMLINT_AGENT_TOKEN    Agent token for --push-url
+  REALMLINT_BACKUP_S3_ENDPOINT
+                           An S3-compatible endpoint (MinIO, Ceph, ...) for
+                           --backup-to s3://...
 `
 
 // Exit codes.
@@ -75,6 +85,9 @@ type Config struct {
 	AgentToken   string
 	Interval     time.Duration
 	EventsSince  time.Duration
+	BackupTo     string
+	BackupEvery  time.Duration
+	BackupS3URL  string // S3-compatible endpoint
 }
 
 // Run parses args and runs the agent until ctx is cancelled (with an
@@ -90,14 +103,29 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		push = newPusher(cfg.PushURL, cfg.AgentToken)
 	}
 
+	var store backupStore
+	if cfg.BackupTo != "" {
+		var err error
+		if store, err = newBackupStore(ctx, cfg.BackupTo, cfg.BackupS3URL); err != nil {
+			fmt.Fprintf(stderr, "realmlint-agent: %v\n", err)
+			return ExitUsage
+		}
+	}
+
 	since := time.Now().Add(-cfg.EventsSince)
+	var lastBackup time.Time
 	for {
 		started := time.Now()
-		err := runOnce(ctx, client, push, cfg, since, stderr)
+		snapshots, err := runOnce(ctx, client, push, cfg, since, stderr)
 		if err != nil {
 			fmt.Fprintf(stderr, "realmlint-agent: %v\n", err)
 		} else {
 			since = started
+		}
+		if len(snapshots) > 0 && started.Sub(lastBackup) >= cfg.BackupEvery && (store != nil || push != nil) {
+			if maybeBackup(ctx, store, push, snapshots, started, stderr) {
+				lastBackup = started
+			}
 		}
 		if cfg.Interval == 0 {
 			if err != nil {
@@ -129,6 +157,8 @@ func parse(args []string, stdout, stderr io.Writer) (Config, int) {
 	fs.StringVar(&cfg.PushURL, "push-url", "", "")
 	fs.DurationVar(&cfg.Interval, "interval", 0, "")
 	fs.DurationVar(&cfg.EventsSince, "events-since", 24*time.Hour, "")
+	fs.StringVar(&cfg.BackupTo, "backup-to", os.Getenv("REALMLINT_BACKUP_TO"), "")
+	fs.DurationVar(&cfg.BackupEvery, "backup-every", 24*time.Hour, "")
 	fs.BoolVar(&showVersion, "version", false, "")
 	fs.BoolVar(&showVersion, "v", false, "")
 
@@ -157,6 +187,7 @@ func parse(args []string, stdout, stderr io.Writer) (Config, int) {
 	}
 	cfg.ClientSecret = os.Getenv("REALMLINT_CLIENT_SECRET")
 	cfg.AgentToken = os.Getenv("REALMLINT_AGENT_TOKEN")
+	cfg.BackupS3URL = os.Getenv("REALMLINT_BACKUP_S3_ENDPOINT")
 
 	switch {
 	case cfg.KeycloakURL == "":
@@ -171,6 +202,8 @@ func parse(args []string, stdout, stderr io.Writer) (Config, int) {
 		return cfg, usageError(stderr, "--interval must be at least 1m")
 	case cfg.EventsSince <= 0:
 		return cfg, usageError(stderr, "--events-since must be positive")
+	case cfg.BackupEvery < time.Hour:
+		return cfg, usageError(stderr, "--backup-every must be at least 1h")
 	}
 	if cfg.PushURL != "" {
 		if err := validatePushURL(cfg.PushURL); err != nil {
@@ -183,17 +216,55 @@ func parse(args []string, stdout, stderr io.Writer) (Config, int) {
 	return cfg, -1
 }
 
+// maybeBackup writes the snapshots to the backup target when backups are
+// on, and tells realmlint how it went. With --push-url, realmlint decides
+// whether backups are on (the instance's setting and plan). It reports
+// whether this was a backup attempt, successful or not.
+func maybeBackup(ctx context.Context, store backupStore, push *pusher, snapshots map[string]map[string]any, at time.Time, stderr io.Writer) bool {
+	if push != nil {
+		on, err := push.backupsOn(ctx)
+		if err != nil {
+			fmt.Fprintf(stderr, "realmlint-agent: backup settings: %v\n", err)
+			return false
+		}
+		if !on {
+			if store != nil {
+				fmt.Fprintln(stderr, "backup: off for this instance in realmlint (Team plan, instance settings); not writing")
+			}
+			return false
+		}
+		if store == nil {
+			push.backupStatus(ctx, backupReport{At: at, Error: "Backups are on in realmlint, but this agent has no --backup-to target."})
+			return true
+		}
+	}
+	err := backup(ctx, store, snapshots, at)
+	report := backupReport{At: at, Target: store.where(), Realms: len(snapshots)}
+	if err != nil {
+		report.Error = err.Error()
+		fmt.Fprintf(stderr, "backup to %s failed: %v\n", store.where(), err)
+	} else {
+		fmt.Fprintf(stderr, "backup: %d realms written to %s\n", len(snapshots), store.where())
+	}
+	if push != nil {
+		push.backupStatus(ctx, report)
+	}
+	return true
+}
+
 // runOnce snapshots every requested realm and writes the files. It carries
-// on past a failing realm and reports all failures at the end.
-func runOnce(ctx context.Context, client *keycloak.Client, push *pusher, cfg Config, since time.Time, stderr io.Writer) error {
+// on past a failing realm and reports all failures at the end. It returns
+// the snapshots taken, for backups.
+func runOnce(ctx context.Context, client *keycloak.Client, push *pusher, cfg Config, since time.Time, stderr io.Writer) (map[string]map[string]any, error) {
+	taken := map[string]map[string]any{}
 	realms := cfg.Realms
 	if len(realms) == 0 {
 		var err error
 		if realms, err = client.Realms(ctx); err != nil {
-			return err
+			return nil, err
 		}
 		if len(realms) == 0 {
-			return errors.New("the agent's client cannot see any realms; check its roles")
+			return nil, errors.New("the agent's client cannot see any realms; check its roles")
 		}
 	}
 	version := client.Version(ctx)
@@ -225,12 +296,13 @@ func runOnce(ctx context.Context, client *keycloak.Client, push *pusher, cfg Con
 			failed = append(failed, name)
 			continue
 		}
+		taken[name] = snapshot
 		fmt.Fprintf(stderr, "realm %s: snapshot taken, %d admin events, %s\n", name, len(events), time.Since(start).Round(time.Millisecond))
 	}
 	if len(failed) > 0 {
-		return fmt.Errorf("%d of %d realms failed: %s", len(failed), len(realms), strings.Join(failed, ", "))
+		return taken, fmt.Errorf("%d of %d realms failed: %s", len(failed), len(realms), strings.Join(failed, ", "))
 	}
-	return nil
+	return taken, nil
 }
 
 // writeJSON writes v to path atomically, so readers never see a partial
