@@ -261,10 +261,10 @@ For the agent to report who changed what, turn on admin events in the realm
 
 ### Backups to your own storage
 
-With hosted realmlint (in preview) on the Team plan, the agent can also
-write each realm's export, with secrets masked, to storage you own: a
-directory (for example a mounted volume) or an S3 bucket, using the agent's
-own AWS credentials. realmlint never holds them.
+With hosted realmlint (in preview), the agent can also write each realm's
+export, with secrets masked, to storage you own: a directory (for example a
+mounted volume) or an S3 bucket, using the agent's own AWS credentials.
+realmlint never holds them.
 
 ```
 realmlint-agent --keycloak-url https://sso.example.com --push-url https://... \

@@ -231,7 +231,7 @@ func maybeBackup(ctx context.Context, store backupStore, push *pusher, snapshots
 		}
 		if !on {
 			if store != nil {
-				fmt.Fprintln(stderr, "backup: off for this instance in realmlint (Team plan, instance settings); not writing")
+				fmt.Fprintln(stderr, "backup: off for this instance in realmlint (instance settings); not writing")
 			}
 			return false
 		}
