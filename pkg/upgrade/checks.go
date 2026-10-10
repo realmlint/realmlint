@@ -160,6 +160,10 @@ var checks = map[string]check{
 	// 26.6.x
 	"valid-redirect-uris-for-clients-do-not-accept-wildcards-for-hostname-anymore": {"valid redirect URIs", func(r realm) []Hit {
 		return r.clientHits(func(c obj) string {
+			// Keycloak never redirects for a client with no browser flow.
+			if c.isFalse("standardFlowEnabled") && !c.isTrue("implicitFlowEnabled") {
+				return ""
+			}
 			for _, u := range c.strs("redirectUris") {
 				if hostWildcard.MatchString(u) {
 					return u + " has a wildcard in the hostname"

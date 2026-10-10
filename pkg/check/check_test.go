@@ -188,6 +188,16 @@ func TestChecks(t *testing.T) {
 			r.Clients[0].RedirectURIs = []string{"*"}
 			r.Clients[0].Enabled = ptr(false)
 		}, nil},
+		{"service account client ignored", "redirect-uri-wildcard", func(r *realm.Realm) {
+			r.Clients[0].RedirectURIs = []string{"/*"}
+			r.Clients[0].StandardFlowEnabled = ptr(false)
+			r.Clients[0].ImplicitFlowEnabled = false
+		}, nil},
+		{"implicit flow only still checked", "redirect-uri-wildcard", func(r *realm.Realm) {
+			r.Clients[0].RedirectURIs = []string{"/*"}
+			r.Clients[0].StandardFlowEnabled = ptr(false)
+			r.Clients[0].ImplicitFlowEnabled = true
+		}, []want{{High, `"portal"`, "any destination"}}},
 
 		// redirect-uri-http
 		{"http redirect", "redirect-uri-http", func(r *realm.Realm) {
@@ -195,6 +205,10 @@ func TestChecks(t *testing.T) {
 		}, []want{{Medium, `"portal"`, "plain HTTP"}}},
 		{"http loopback allowed", "redirect-uri-http", func(r *realm.Realm) {
 			r.Clients[0].RedirectURIs = []string{"http://127.0.0.1:8080/cb", "http://localhost/cb"}
+		}, nil},
+		{"http redirect without browser flows ignored", "redirect-uri-http", func(r *realm.Realm) {
+			r.Clients[0].RedirectURIs = []string{"http://portal.acme.example/callback"}
+			r.Clients[0].StandardFlowEnabled = ptr(false)
 		}, nil},
 
 		// web-origins-wildcard

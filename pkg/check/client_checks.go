@@ -39,6 +39,20 @@ func appClients(r *realm.Realm) []*realm.Client {
 	return out
 }
 
+// redirectClients returns the app clients that can send a browser to a
+// redirect URI: those with the standard or implicit flow on. Keycloak keeps
+// (and hides) the redirect URIs of a client with both off, such as a service
+// account client created with the default "/*", but never uses them.
+func redirectClients(r *realm.Realm) []*realm.Client {
+	var out []*realm.Client
+	for _, c := range appClients(r) {
+		if c.UsesStandardFlow() || c.ImplicitFlowEnabled {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
 var clientChecks = []Check{
 	{
 		ID:    "redirect-uri-wildcard",
@@ -47,7 +61,7 @@ var clientChecks = []Check{
 		Fix:   "In the client's Settings, replace wildcard Valid redirect URIs with the exact callback URLs.",
 		Run: func(ctx *Context) []Finding {
 			var findings []Finding
-			for _, c := range appClients(ctx.Realm) {
+			for _, c := range redirectClients(ctx.Realm) {
 				for _, uri := range c.RedirectURIs {
 					if !strings.HasSuffix(uri, "*") {
 						continue
@@ -81,7 +95,7 @@ var clientChecks = []Check{
 		Fix:   "Change the redirect URI to https://. Plain HTTP is only acceptable for localhost during development.",
 		Run: func(ctx *Context) []Finding {
 			var findings []Finding
-			for _, c := range appClients(ctx.Realm) {
+			for _, c := range redirectClients(ctx.Realm) {
 				for _, uri := range c.RedirectURIs {
 					if !strings.HasPrefix(strings.ToLower(uri), "http://") || isLoopback(uri) {
 						continue

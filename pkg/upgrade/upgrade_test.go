@@ -154,3 +154,23 @@ func TestAdviseRange(t *testing.T) {
 		t.Error("accepted a bad version")
 	}
 }
+
+func TestRedirectWildcardSkipsClientsWithoutBrowserFlows(t *testing.T) {
+	doc := map[string]any{"realm": "shop", "clients": []any{
+		map[string]any{"clientId": "agent", "standardFlowEnabled": false, "serviceAccountsEnabled": true, "redirectUris": []any{"https://shop.example.com*"}},
+		map[string]any{"clientId": "spa", "standardFlowEnabled": false, "implicitFlowEnabled": true, "redirectUris": []any{"https://shop.example.com*"}},
+	}}
+	rep, err := Advise("26.0.0", "26.8.0", map[string]map[string]any{"shop": doc})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, a := range rep.Items {
+		if a.Anchor == "valid-redirect-uris-for-clients-do-not-accept-wildcards-for-hostname-anymore" {
+			if len(a.Hits) != 1 || a.Hits[0].Object != "Client spa" {
+				t.Fatalf("hits %+v, want only Client spa", a.Hits)
+			}
+			return
+		}
+	}
+	t.Fatal("redirect wildcard item missing")
+}
