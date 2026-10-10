@@ -30,9 +30,11 @@ DIR/events/<realm>.json. Check the result with 'realmlint check DIR'.
 With --push-url, sends the same data to hosted realmlint.
 
 The agent logs in as a confidential client with a service account. Give the
-service account these realm-management roles: view-realm, view-clients,
-view-users, view-events and view-identity-providers. If the client has full
-scope turned off, add the same roles to its scope mappings.
+service account these roles: view-realm, view-clients, view-users,
+view-events and view-identity-providers, from realm-management when the
+client is in the realm it reads, or from each realm's <realm>-realm client
+when it is in master. If the client has full scope turned off, add the same
+roles to its scope mappings.
 
 Flags:
   --keycloak-url URL     Keycloak base URL, for example https://sso.example.com
@@ -274,8 +276,15 @@ func runOnce(ctx context.Context, client *keycloak.Client, push *pusher, cfg Con
 		start := time.Now()
 		snapshot, err := client.Snapshot(ctx, name, version)
 		var events []any
+		eventsNote := ""
 		if err == nil {
 			events, err = client.AdminEvents(ctx, name, since)
+			// Admin events only name who made a change: without them the
+			// snapshot is still worth sending.
+			if errors.Is(err, keycloak.ErrEventsForbidden) {
+				err = nil
+				eventsNote = ", admin events not readable: " + eventsRoleHint(cfg.AuthRealm, name)
+			}
 		}
 		if err == nil && cfg.Out != "" {
 			err = writeJSON(filepath.Join(cfg.Out, safeName(name)+".json"), snapshot)
@@ -297,12 +306,22 @@ func runOnce(ctx context.Context, client *keycloak.Client, push *pusher, cfg Con
 			continue
 		}
 		taken[name] = snapshot
-		fmt.Fprintf(stderr, "realm %s: snapshot taken, %d admin events, %s\n", name, len(events), time.Since(start).Round(time.Millisecond))
+		fmt.Fprintf(stderr, "realm %s: snapshot taken, %d admin events, %s%s\n", name, len(events), time.Since(start).Round(time.Millisecond), eventsNote)
 	}
 	if len(failed) > 0 {
 		return taken, fmt.Errorf("%d of %d realms failed: %s", len(failed), len(realms), strings.Join(failed, ", "))
 	}
 	return taken, nil
+}
+
+// eventsRoleHint says where the missing view-events role comes from: for a
+// client in the master realm reading another realm, from that realm's
+// "<realm>-realm" client in master; otherwise from realm-management.
+func eventsRoleHint(authRealm, realmName string) string {
+	if authRealm == "master" {
+		return fmt.Sprintf("give the agent's service account the view-events role of client %s-realm (in the master realm); changes show no author until then", realmName)
+	}
+	return "give the agent's service account the view-events role of client realm-management; changes show no author until then"
 }
 
 // writeJSON writes v to path atomically, so readers never see a partial

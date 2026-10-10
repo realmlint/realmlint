@@ -241,8 +241,13 @@ Create the agent's client in the realm you want to snapshot:
    **Client authentication** and **Service account roles**, and turn off
    **Standard flow** and **Direct access grants**.
 2. On its **Service account roles** tab, **Assign role**, filter by clients,
-   and add these `realm-management` roles: `view-realm`, `view-clients`,
-   `view-users`, `view-events`, `view-identity-providers`.
+   and add these five roles: `view-realm`, `view-clients`, `view-users`,
+   `view-events`, `view-identity-providers`. If the client is in the realm it
+   reads, they come from `realm-management`. If it is in `master` and reads
+   several realms, add them from each realm's `<realm>-realm` client (for
+   example `acme-realm`), and from `master-realm` to read master itself.
+   Without `view-events` the agent still sends snapshots, but changes show
+   no author.
 3. On **Client scopes > realmlint-agent-dedicated > Scope**, turn off
    **Full scope allowed** and assign the same five roles. Without this step
    every request fails with 403.

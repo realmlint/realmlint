@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -309,6 +310,10 @@ func (c *Client) components(ctx context.Context, r string) (map[string]any, erro
 	return byType, nil
 }
 
+// ErrEventsForbidden means the agent's client may read the realm but not its
+// admin events: it lacks the view-events role.
+var ErrEventsForbidden = errors.New("the agent's client may not read admin events (no view-events role)")
+
 // AdminEvents returns the realm's admin events at or after since, oldest
 // first. Admin events must be enabled in the realm for there to be any.
 func (c *Client) AdminEvents(ctx context.Context, realmName string, since time.Time) ([]any, error) {
@@ -318,6 +323,9 @@ func (c *Client) AdminEvents(ctx context.Context, realmName string, since time.T
 		var apiErr *APIError
 		if errors.As(err, &apiErr) && apiErr.Status == 404 {
 			return nil, nil
+		}
+		if errors.As(err, &apiErr) && apiErr.Status == http.StatusForbidden {
+			return nil, ErrEventsForbidden
 		}
 		return nil, err
 	}

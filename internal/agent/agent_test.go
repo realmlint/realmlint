@@ -164,3 +164,12 @@ func TestPusherReportsUnauthorized(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+func TestEventsRoleHint(t *testing.T) {
+	if h := eventsRoleHint("master", "wanderoon"); !strings.Contains(h, "view-events role of client wanderoon-realm (in the master realm)") {
+		t.Errorf("master: %s", h)
+	}
+	if h := eventsRoleHint("acme", "acme"); !strings.Contains(h, "view-events role of client realm-management") {
+		t.Errorf("same realm: %s", h)
+	}
+}
