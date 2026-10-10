@@ -61,9 +61,9 @@ its clients, roles, groups and identity providers instead of creating them.
 Secrets become variables. Users, client scopes, flows and role mappings are
 not exported.
 
-With the hosted realmlint, send the state after each apply and the portal
-shows settings changed in Keycloak outside Terraform, and who changed them.
-In GitHub Actions:
+With the hosted realmlint (in preview; [join the waitlist](https://realmlint.dev/?utm_source=github#hosted)),
+send the state after each apply and the portal shows settings changed in
+Keycloak outside Terraform, and who changed them. In GitHub Actions:
 
 ```yaml
 - run: terraform apply -auto-approve
@@ -162,8 +162,8 @@ attestation, made by the release workflow in this repository. With the
 GitHub CLI:
 
 ```
-gh attestation verify realmlint_1.0.0_linux_amd64.tar.gz --repo realmlint/realmlint
-gh attestation verify oci://ghcr.io/realmlint/realmlint:1.0.0 --repo realmlint/realmlint
+gh attestation verify realmlint_1.1.3_linux_amd64.tar.gz --repo realmlint/realmlint
+gh attestation verify oci://ghcr.io/realmlint/realmlint:1.1.3 --repo realmlint/realmlint
 ```
 
 Each archive also has an SPDX SBOM (`<archive>.sbom.json`) listing what is
@@ -248,9 +248,11 @@ Create the agent's client in the realm you want to snapshot:
    example `acme-realm`), and from `master-realm` to read master itself.
    Without `view-events` the agent still sends snapshots, but changes show
    no author.
-3. On **Client scopes > realmlint-agent-dedicated > Scope**, turn off
-   **Full scope allowed** and assign the same five roles. Without this step
-   every request fails with 403.
+3. Optional, to keep other roles out of the agent's token: on **Client
+   scopes > realmlint-agent-dedicated > Scope**, turn off **Full scope
+   allowed** and assign the same roles there. A role must be in both places
+   to reach the token, so with full scope off and no roles assigned, every
+   request fails with 403.
 4. Copy the secret from the **Credentials** tab into `REALMLINT_CLIENT_SECRET`.
 
 For the agent to report who changed what, turn on admin events in the realm
@@ -259,10 +261,10 @@ For the agent to report who changed what, turn on admin events in the realm
 
 ### Backups to your own storage
 
-With hosted realmlint on the Team plan, the agent can also write each
-realm's export, with secrets masked, to storage you own: a directory (for
-example a mounted volume) or an S3 bucket, using the agent's own AWS
-credentials. realmlint never holds them.
+With hosted realmlint (in preview) on the Team plan, the agent can also
+write each realm's export, with secrets masked, to storage you own: a
+directory (for example a mounted volume) or an S3 bucket, using the agent's
+own AWS credentials. realmlint never holds them.
 
 ```
 realmlint-agent --keycloak-url https://sso.example.com --push-url https://... \
