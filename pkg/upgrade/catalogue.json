@@ -1,0 +1,2442 @@
+{
+ "source": "https://www.keycloak.org/docs/latest/upgrading/index.html",
+ "license": "Apache-2.0 (Keycloak documentation)",
+ "items": [
+  {
+   "version": "26.8.0",
+   "category": "breaking",
+   "anchor": "client-secret-no-longer-returned-for-view-only-client-permissions",
+   "title": "Client secret no longer returned for view-only client permissions",
+   "summary": "The Admin REST API endpoints for retrieving client representations (GET /admin/realms/{realm}/clients and GET /admin/realms/{realm}/clients/{id}) no longer include the client secret in the response when the caller only has view-clients permission."
+  },
+  {
+   "version": "26.8.0",
+   "category": "breaking",
+   "anchor": "initiating_idp-logout-parameter-ignored-by-default",
+   "title": "initiating_idp logout parameter ignored by default",
+   "summary": "The initiating_idp query parameter on the OIDC RP-initiated logout endpoint is now ignored by default. This parameter suppressed the logout at the upstream identity provider for the referenced broker."
+  },
+  {
+   "version": "26.8.0",
+   "category": "breaking",
+   "anchor": "x509-user-authentication-requires-ca-subject-dn",
+   "title": "X509 user authentication requires CA Subject DN",
+   "summary": "Following the changes made to the X509 client authenticator, in this release the user counterparts also require the Certificate Authority subject DN option. The new configuration attribute is multi-valued and identifies the trusted anchor CA (or CAs) for user certificates."
+  },
+  {
+   "version": "26.8.0",
+   "category": "breaking",
+   "anchor": "disabled-clients-are-no-longer-added-to-the-token-audience",
+   "title": "Disabled clients are no longer added to the token audience",
+   "summary": "A disabled or removed client is never added to the aud claim of a token, and its client roles are not present in the resource_access claim. Tokens are still issued, only without that client, so logins and refreshes keep succeeding."
+  },
+  {
+   "version": "26.8.0",
+   "category": "breaking",
+   "anchor": "resource-uri-matching-in-authorization-services-normalizes-matrix-parameters-dot-segments-percent-encoding-and-queryfragment-components",
+   "title": "Resource URI matching in Authorization Services normalizes matrix parameters, dot segments, percent-encoding, and query/fragment components",
+   "summary": "When matching an incoming request URI against a resource URI configured in Authorization Services (the policy enforcer and the UMA permission endpoint), the URI is now normalized before comparison: Matrix parameters (for example ;jsessionid=...), including percent-encoded (%3B), are stripped."
+  },
+  {
+   "version": "26.8.0",
+   "category": "breaking",
+   "anchor": "identity-provider-mappers-no-longer-grant-administrative-roles-by-default-cve-2026-12388",
+   "title": "Identity provider mappers no longer grant administrative roles by default (CVE-2026-12388)",
+   "summary": "Identity provider mappers can grant realm roles to brokered users or add them to groups."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "secrets-referenced-by-oidc-client-crs-now-require-a-label",
+   "title": "Secrets referenced by OIDC Client CRs now require a label",
+   "summary": "Kubernetes Secrets referenced via spec.client.auth.secretRef in a KeycloakOIDCClient CR must now carry the label operator.keycloak.org/kind: KeycloakOIDCClient. Without this label the operator treats the Secret as missing and reports a HasErrors status condition on the CR, even if the Secret exists."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "refresh-token-expiration-now-reflects-the-session-idle-timeout",
+   "title": "Refresh token expiration now reflects the session idle timeout",
+   "summary": "When Offline Session Max Limited is disabled (the default), offline refresh tokens previously had no exp claim and the token response returned refresh_expires_in: 0."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "no_proxy-entries-with-leading-dots-or-spaces-after-commas-now-parsed-correctly",
+   "title": "NO_PROXY entries with leading dots or spaces after commas now parsed correctly",
+   "summary": "NO_PROXY entries with a leading dot (for example, .corp.com) or whitespace after a comma (for example, localhost, internal.corp.com) previously failed to match silently, causing traffic to go through the proxy despite the exclusion rule."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "kcadm-and-kcreg-now-enforce-owner-only-permissions-on-existing-configuration-files",
+   "title": "kcadm and kcreg now enforce owner-only permissions on existing configuration files",
+   "summary": "The kcadm and kcreg CLI tools now set owner-only file permissions (0600) on their configuration files every time credentials are written, not only when the file is first created."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "login-failures-now-stored-in-the-database-by-default",
+   "title": "Login failures now stored in the database by default",
+   "summary": "Login failure data for brute force detection is now stored in the database by default, instead of only in the embedded Infinispan loginFailures cache. This ensures that temporarily locked-out users remain locked out across cluster restarts, and reduces memory consumption from accumulated login failure entries."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "stateless-feature-promoted-from-preview-to-supported",
+   "title": "Stateless feature promoted from preview to supported",
+   "summary": "The stateless feature has been promoted from preview to supported. It is disabled by default and can be enabled with --features=stateless. If you previously relied on --features=preview to enable the stateless feature, you must now enable it explicitly with --features=stateless, as --features=preview no longer activates supported features."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "clusterless-feature-will-be-removed",
+   "title": "Clusterless feature will be removed",
+   "summary": "The experimental clusterless feature will be removed in a future release. The stateless feature is the successor for running Keycloak without depending on an external Infinispan cluster."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "authzen-changes",
+   "title": "AuthZEN changes",
+   "summary": "The experimental AuthZEN endpoints now require the caller to authenticate with a confidential client’s access token. Previously, a user’s access token was also accepted."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "client-session-listings-filter-sessions-by-user-visibility",
+   "title": "Client session listings filter sessions by user visibility",
+   "summary": "The Admin REST API endpoints for listing client sessions (GET /admin/realms/{realm}/clients/{id}/user-sessions and GET /admin/realms/{realm}/clients/{id}/offline-sessions) now filter out sessions belonging to users that the caller does not have permission to view."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "administrators-that-can-map-a-role-can-also-view-it",
+   "title": "Administrators that can map a role can also view it",
+   "summary": "An administrator that is allowed to map a role to a user is now also allowed to view that role. This applies to the manage-users realm admin role, to the map-role and map-roles permissions of fine-grained admin permissions V1, and to the map-role operation of the Roles resource type in fine-grained admin permissions V2."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "client-secret-rotation-is-now-enabled-by-default",
+   "title": "Client Secret Rotation is now enabled by default",
+   "summary": "The client-secret-rotation feature has been promoted from preview to supported and is now enabled by default. If you previously enabled this feature explicitly with --features=client-secret-rotation or --features=preview, that configuration is no longer required."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "scim-api-is-now-enabled-by-default",
+   "title": "SCIM API is now enabled by default",
+   "summary": "The scim-api feature has been promoted from preview to supported and is now enabled by default. If you previously enabled this feature explicitly with --features=scim-api or --features=preview, that configuration is no longer required."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "show-config-now-masks-all-spi-option-values",
+   "title": "show-config now masks all SPI option values",
+   "summary": "The show-config command now masks all SPI option values. The command is not currently aware of provider factory configuration property metadata, so it cannot determine whether a property is marked as isSecret."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "redesigned-identity-provider-buttons-on-the-login-page",
+   "title": "Redesigned identity provider buttons on the login page",
+   "summary": "The social identity provider section on the login page has been redesigned with updated icons and layout. For details, see the GitHub issue. Custom login themes that override social-providers.ftl or apply CSS targeting the identity provider icons may render incorrectly after upgrading."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "extension-migration-when-using-the-vert-x-http-client",
+   "title": "Extension migration when using the Vert.x HTTP client",
+   "summary": "When the experimental Vert.x HTTP client is enabled (--features=http-client:v2), getHttpClient() returns a compatibility bridge that translates Apache API calls to Vert.x internally, so existing extensions continue to work without changes."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "token-introspection-act-claim-now-uses-user-id-for-sub",
+   "title": "Token introspection act claim now uses user ID for sub",
+   "summary": "The token introspection endpoint previously set the act.sub field to the impersonator’s username. It now uses the impersonator’s user ID to be consistent with the act claim in JWT access tokens and ID tokens."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "group-policy-matching-for-bare-group-names-cve-2026-19608",
+   "title": "Group policy matching for bare group names (CVE-2026-19608)",
+   "summary": "Group-based policies in Authorization Services use the groups claim from the token as the first source of truth. When the claim is not defined or empty, the policy falls back to the user’s actual group memberships from the realm."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "token-exchange-delegation-now-requires-fgap-v2-permissions",
+   "title": "Token exchange delegation now requires FGAP V2 permissions",
+   "summary": "The experimental token exchange delegation feature no longer uses the impersonation role from the realm-management client to authorize delegation."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "token-exchange-delegation-scope-renamed-from-delegation-to-delegationuser",
+   "title": "Token exchange delegation scope renamed from delegation to delegation:user",
+   "summary": "The parameterized client scope used by the experimental token exchange delegation feature has been renamed from delegation to delegation:user to better reflect that this scope targets delegation to a specific user (administrator)."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "email-is-no-longer-marked-as-verified-by-other-flows",
+   "title": "Email is no longer marked as verified by other flows",
+   "summary": "Previously, some flows marked the email of a user as verified even though their purpose was not email verification. This could make an account registered by a different party than the owner of the email address look trusted."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "offline-session-expiration-indexes-rebuilt-with-session-bucket-and-coarse-refresh-columns",
+   "title": "Offline session expiration indexes rebuilt with session bucket and coarse refresh columns",
+   "summary": "The OFFLINE_USER_SESSION table has a new LAST_SESSION_REFRESH_COARSE column and updated indexes IDX_USER_SESSION_EXPIRATION_CREATED and IDX_USER_SESSION_EXPIRATION_LAST_REFRESH."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "automatic-non-blocking-index-creation-after-startup",
+   "title": "Automatic non-blocking index creation after startup",
+   "summary": "When Keycloak skips creating an index during schema migration because the table exceeds the row count threshold, the index checker now automatically creates the missing index in the background after startup on databases that support non-blocking index creation."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "disabling-caching-of-persistent-user-sessions",
+   "title": "Disabling caching of persistent user sessions",
+   "summary": "Caching of persistent user sessions in the embedded Infinispan can be disabled. Recent optimizations to the database layer, including async commits, improved indexes, and cheaper refresh-date updates, make persistent sessions without caching a viable option."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "certificate-common-name-truncated-to-64-characters",
+   "title": "Certificate Common Name truncated to 64 characters",
+   "summary": "When Keycloak generates self-signed certificates (for example, during SAML client creation), the Common Name (CN) is now truncated to 64 characters to comply with the RFC 5280 ub-common-name upper bound."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "transaction-isolation-level-changed-to-read-committed-for-mysql-and-mariadb-in-stateless-mode",
+   "title": "Transaction isolation level changed to READ COMMITTED for MySQL and MariaDB in stateless mode",
+   "summary": "When the stateless feature is enabled, Keycloak now sets the transaction isolation level to READ COMMITTED for MySQL and MariaDB. This prevents deadlocks that occur under concurrent logins."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "galera-cluster-considerations",
+   "title": "Galera Cluster considerations",
+   "summary": "Galera Cluster is not a supported database configuration for Keycloak. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "asynchronous-commit-on-ms-sql-server-and-oracle-databases",
+   "title": "Asynchronous commit on MS SQL Server and Oracle databases",
+   "summary": "The asynchronous commit optimization, previously available only on PostgreSQL, now also supports MS SQL Server and Oracle databases. Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use delayed/asynchronous commit, improving throughput."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "stateless-feature-requires-a-distinct-cluster-name",
+   "title": "Stateless feature requires a distinct cluster name",
+   "summary": "The stateless feature now requires --cache-embedded-cluster-name to be set explicitly to a value other than the default ISPN. Keycloak refuses to start if the stateless feature is enabled and this option is missing or still set to ISPN."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "first-class-cli-options-for-cluster-and-node-name",
+   "title": "First-class CLI options for cluster and node name",
+   "summary": "The embedded cache cluster name and node name are now configurable with the first-class CLI options --cache-embedded-cluster-name (environment variable KC_CACHE_EMBEDDED_CLUSTER_NAME) and --cache-embedded-node-name (environment variable KC_CACHE_EMBEDDED_NODE_NAME)."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "validating-cluster-names-when-using-jdbc-ping-discovery",
+   "title": "Validating cluster names when using jdbc-ping discovery",
+   "summary": "Keycloak nodes that use the jdbc-ping cluster stack periodically check whether other Keycloak deployments with a different cluster name are connecting to the same database."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "quarkus-upgraded-from-3-33-to-3-40",
+   "title": "Quarkus upgraded from 3.33 to 3.40",
+   "summary": "Keycloak now runs on Quarkus 3.40 (up from 3.33 in 26.7.0). This upgrade brings internal improvements across the Quarkus platform. While no user-facing configuration changes are required, custom extensions or providers that depend on Quarkus-internal APIs should be retested."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "organization-identity-providers-now-support-many-to-many-linking",
+   "title": "Organization identity providers now support many-to-many linking",
+   "summary": "The relationship between identity providers and organizations has changed from many-to-one to many-to-many. Previously, an organization could have multiple identity providers, but each identity provider could only be linked to a single organization."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "default-jpa-persistence-unit-renamed-to-default",
+   "title": "Default JPA persistence unit renamed to <default>",
+   "summary": "Keycloak’s default JPA persistence unit is now configured through Quarkus Hibernate ORM properties instead of an internal persistence.xml. As a result, the default persistence unit, previously named keycloak-default, is now Quarkus' default (unnamed) persistence unit, reported as <default>."
+  },
+  {
+   "version": "26.8.0",
+   "category": "notable",
+   "anchor": "new-executor-to-secure-client-cluster-node-registration",
+   "title": "New executor to secure client cluster node registration",
+   "summary": "A new client policy executor, secure-client-node-hostname, is available to address server-side request forgery (SSRF) via the legacy adapter cluster node registration endpoint (/clients-managements/register-node)."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "client-registration-providers-default-install-and-saml2-entity-descriptor",
+   "title": "Client registration providers default, install, and saml2-entity-descriptor",
+   "summary": "The following client registration endpoints are now deprecated and will be removed in a future major release: /realms/<realm>/clients-registrations/default — Keycloak Client Representation provider /realms/<realm>/clients-registrations/install/<clientId> — Adapter Installation Configuration provider /realms/<realm>/clients-registrations/saml2-entity-descriptor — SAML Entity Descriptor provider These endpoints are not backed by any specification."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "multi-cluster-v1-multi-site-feature-is-deprecated",
+   "title": "Multi-cluster v1 (multi-site feature) is deprecated",
+   "summary": "The multi-site feature, used for multi-cluster v1 deployments with an external Infinispan cluster, is deprecated and will be removed in a future major release. The stateless feature (multi-cluster v2) is the recommended replacement."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "client-certificate-rest-api-endpoints-for-key-pair-management",
+   "title": "Client certificate REST API endpoints for key pair management",
+   "summary": "Several REST API endpoints under /admin/realms/{realm}/clients/{id}/certificates/{attr} that deal with server-side key pair generation or private key storage are now deprecated: POST …​/generate — Generates a key pair on the server."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "introspection-endpoint-jwt-extension",
+   "title": "Introspection endpoint 'jwt' extension",
+   "summary": "The proprietary Keycloak extension for invoking the introspection endpoint with the HTTP header Accept: application/jwt instead of Accept: application/json is now deprecated."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "full-scope-allowed-switch-on-clients-is-deprecated",
+   "title": "'Full scope allowed' switch on clients is deprecated",
+   "summary": "The Full Scope Allowed switch on OIDC clients is deprecated and will be removed in a future release. When Full Scope Allowed is enabled (which is the default for new clients), every access token issued for that client contains all roles the authenticated user holds across all clients and the realm."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "client-switches-in-the-openid-connect-compatibility-modes",
+   "title": "Client switches in the 'OpenID Connect Compatibility Modes'",
+   "summary": "Several client switches in the admin console under OpenID Connect Compatibility Modes were introduced for backwards compatibility with older OIDC/OAuth2 client adapters."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "option-revalidate-client-certificate-is-deprecated-for-the-x509-user-authenticators",
+   "title": "Option Revalidate Client Certificate is deprecated for the X509 user authenticators",
+   "summary": "As described in the breaking changes section, the option Revalidate Client Certificate is deprecated for the X509 user authenticators. This option was used to revalidate the certificate chain presented by the user against the server trust store."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "httpresponsegetstatus-and-setstatusint-in-server-spi",
+   "title": "HttpResponse#getStatus() and setStatus(int) in server SPI",
+   "summary": "org.keycloak.http.HttpResponse#getStatus() and org.keycloak.http.HttpResponse#setStatus(int) are now deprecated. These methods are not useful for JAX-RS resource endpoints because the JAX-RS runtime usually determines the final HTTP status from the endpoint return value or exception."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "route-in-auth_session_id-cookie-for-sticky-sessions",
+   "title": "Route in AUTH_SESSION_ID cookie for sticky sessions",
+   "summary": "Having the load balancer route appended to the AUTH_SESSION_ID cookie is now deprecated. Since the optimizations in 26.6, sticky sessions no longer bring a significant benefit given the complex setup on the proxy side to get this working."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "disabling-persistent-user-sessions-volatile-sessions-is-deprecated",
+   "title": "Disabling persistent user sessions (volatile sessions) is deprecated",
+   "summary": "Disabling the persistent-user-sessions feature (volatile sessions) is deprecated and will be removed in a future release. Persistent user sessions will become the only supported mode."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "in-memory-login-failures-login-failuresv1-is-deprecated",
+   "title": "In-memory login failures (login-failures:v1) is deprecated",
+   "summary": "The previous default of storing login failure data only in the in-memory Infinispan cache (login-failures:v1) is deprecated and will be removed in a future release."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "use-refresh-tokens-for-client-credentials-grant-switch-on-clients-is-deprecated",
+   "title": "Use refresh tokens for client credentials grant switch on clients is deprecated",
+   "summary": "The Use refresh tokens for client credentials grant switch on clients is deprecated and will be removed in a future release. This switch was introduced solely for backwards compatibility and it is discouraged to use service accounts together with refresh tokens."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "kerberos-credential-delegation-is-deprecated",
+   "title": "Kerberos credential delegation is deprecated",
+   "summary": "Kerberos credential delegation (the gss delegation credential protocol mapper) is now deprecated for security reasons and will be removed in a future release."
+  },
+  {
+   "version": "26.8.0",
+   "category": "deprecated",
+   "anchor": "keycloak-realm-operator-reached-end-of-life",
+   "title": "Keycloak Realm Operator reached end of life",
+   "summary": "The Keycloak Realm Operator has reached its end of life and its repository will be archived. The Realm Operator was introduced as a temporary workaround to compensate mainly for the missing Client custom resources in the Keycloak Operator."
+  },
+  {
+   "version": "26.7.5",
+   "category": "breaking",
+   "anchor": "client-policy-source-groups-condition-matches-the-full-group-path",
+   "title": "Client policy source groups condition matches the full group path",
+   "summary": "The client-updater-source-groups client policy condition now matches groups by their full path instead of the simple group name. A configured value without a leading slash is treated as a top level group, so a condition configured with topGroup matches /topGroup and keeps behaving as before."
+  },
+  {
+   "version": "26.7.5",
+   "category": "breaking",
+   "anchor": "organizationprovidergetbyalias-no-longer-has-a-default-implementation",
+   "title": "OrganizationProvider#getByAlias no longer has a default implementation",
+   "summary": "org.keycloak.organization.OrganizationProvider#getByAlias(String) is now an abstract method. If you provide a custom OrganizationProvider, you must implement it."
+  },
+  {
+   "version": "26.7.4",
+   "category": "breaking",
+   "anchor": "resource-uri-matching-in-authorization-services-normalizes-matrix-parameters-dot-segments-percent-encoding-and-queryfragment-components-2",
+   "title": "Resource URI matching in Authorization Services normalizes matrix parameters, dot segments, percent-encoding, and query/fragment components",
+   "summary": "When matching an incoming request URI against a resource URI configured in Authorization Services (the policy enforcer and the UMA permission endpoint), the URI is now normalized before comparison: Matrix parameters (for example ;jsessionid=...), including percent-encoded (%3B), are stripped."
+  },
+  {
+   "version": "26.7.3",
+   "category": "breaking",
+   "anchor": "authorization-services-claim-handling-changes",
+   "title": "Authorization services claim handling changes",
+   "summary": "Two changes affect how claims are handled in the authorization services token endpoint: Claims with the kc. prefix are now reserved for server-controlled evaluation context attributes (such as kc.time.date_time, kc.client.id, and kc.realm.name)."
+  },
+  {
+   "version": "26.7.3",
+   "category": "breaking",
+   "anchor": "oidc-parameters-in-redirect-uris-rejected-by-default",
+   "title": "OIDC parameters in redirect URIs rejected by default",
+   "summary": "Redirect URIs (redirect_uri and post_logout_redirect_uri) containing OIDC response parameters such as state, code, or session_state are now rejected by default. These parameters conflict with the parameters that Keycloak attaches to the redirect URI after authentication or logout, potentially causing HTTP Parameter Pollution."
+  },
+  {
+   "version": "26.7.3",
+   "category": "deprecated",
+   "anchor": "organization-invitation-link-no-longer-exposed-in-api-responses",
+   "title": "Organization invitation link no longer exposed in API responses",
+   "summary": "The inviteLink field in OrganizationInvitationRepresentation is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints."
+  },
+  {
+   "version": "26.7.2",
+   "category": "breaking",
+   "anchor": "legacy-client-initiated-account-linking-endpoint-disabled-by-default",
+   "title": "Legacy client-initiated account linking endpoint disabled by default",
+   "summary": "The deprecated legacy client-initiated account linking endpoint (/realms/{realm}/broker/{provider}/link) is now disabled by default. Migrate to Application Initiated Actions (AIA) with kc_action=idp_link."
+  },
+  {
+   "version": "26.7.1",
+   "category": "breaking",
+   "anchor": "client-scope-assignment-now-enforces-client-scope-permissions",
+   "title": "Client scope assignment now enforces client scope permissions",
+   "summary": "The client scope assignment endpoints on a specific client now require the caller to have manage permission on client scopes, in addition to the existing manage permission on the target client."
+  },
+  {
+   "version": "26.7.1",
+   "category": "breaking",
+   "anchor": "stricter-checks-in-the-admin-api-for-admin-roles-granted-via-protocol-mappers",
+   "title": "Stricter checks in the Admin API for admin roles granted via protocol mappers",
+   "summary": "In this release, access to the Admin API is only granted to users with admin roles that are directly assigned to them, either through direct role assignments or group memberships."
+  },
+  {
+   "version": "26.7.1",
+   "category": "notable",
+   "anchor": "group-hierarchy-search-returns-stripped-ancestors-under-fine-grained-admin-permissions",
+   "title": "Group hierarchy search returns stripped ancestors under Fine-Grained Admin Permissions",
+   "summary": "When Fine-Grained Admin Permissions is enabled and a delegated administrator has view permission on a group but not on its ancestors, the Admin REST API now returns the full group hierarchy with non-viewable ancestor groups represented as stripped representations."
+  },
+  {
+   "version": "26.7.0",
+   "category": "breaking",
+   "anchor": "test-framework-representation-builders",
+   "title": "Test Framework representation builders",
+   "summary": "The test framework provides a number of builders to simplify creating representations. These can be used on their own, but are also used by RealmConfig, ClientConfig and UserConfig implementations."
+  },
+  {
+   "version": "26.7.0",
+   "category": "breaking",
+   "anchor": "identity-provider-alias-is-now-immutable",
+   "title": "Identity Provider alias is now immutable",
+   "summary": "The alias of an Identity Provider can no longer be changed after creation via the Admin REST API. Attempts to update the alias will result in a 400 Bad Request error."
+  },
+  {
+   "version": "26.7.0",
+   "category": "breaking",
+   "anchor": "organization-member-query-returns-brief-user-representation-by-default",
+   "title": "Organization member query returns brief user representation by default",
+   "summary": "When querying organization members using the Admin REST API (GET /admin/realms/{realm}/organizations/{id}/members), a brief user representation is now returned by default."
+  },
+  {
+   "version": "26.7.0",
+   "category": "breaking",
+   "anchor": "x509-client-authentication-requires-ca-subject-dn",
+   "title": "X509 client authentication requires CA Subject DN",
+   "summary": "Since this release, the X509 client authentication, which allows a client to authenticate by presenting a certificate in the mutual TLS (mTLS) handshake, requires configuring a new option called Certificate Authority subject DN to identify the trusted anchor CA for the client certificate."
+  },
+  {
+   "version": "26.7.0",
+   "category": "breaking",
+   "anchor": "the-view-system-admin-role-no-longer-exists",
+   "title": "The view-system admin role no longer exists",
+   "summary": "The view-system admin role, introduced in version 26.5.4, was immediately marked as deprecated. In this release, the role has been removed for security reasons. Access to full server information is now restricted to users in the master realm holding the manage-realm role."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "stricter-validation-of-resource-uri-templates-in-authorization-services",
+   "title": "Stricter validation of resource URI templates in Authorization Services",
+   "summary": "Resource URI templates used in Authorization Services are now validated more strictly when creating or updating resources via the Admin REST API. The documented patterns — named placeholders like /api/{id}/info, trailing wildcards like /api/*, suffix patterns like /*.html, and combinations like /api/{id}/files/* — continue to work unchanged."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "organization-invitation-filters-use-exact-matching",
+   "title": "Organization invitation filters use exact matching",
+   "summary": "The email, firstName, and lastName query parameters on the organization invitations list endpoint (GET /admin/realms/{realm}/orgs/{orgId}/invitations) now use case-insensitive exact matching instead of substring matching."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "dynamic-scopes-feature-renamed-to-parameterized-scopes",
+   "title": "Dynamic Scopes feature renamed to Parameterized Scopes",
+   "summary": "The experimental feature dynamic-scopes has been renamed to parameterized-scopes. If you enabled this feature using --features=dynamic-scopes, update your configuration to use --features=parameterized-scopes."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "asynchronous-commit-on-postgresql-databases",
+   "title": "Asynchronous commit on PostgreSQL databases",
+   "summary": "Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL’s async commit feature."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "parameterized-scopes-now-require-a-parameter-type",
+   "title": "Parameterized scopes now require a parameter type",
+   "summary": "When the parameterized-scopes feature is enabled, creating or updating a parameterized scope via the Admin REST API now requires a parameterized.scope.type attribute."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "verify-email-required-before-credentials-setup-during-user-self-registration",
+   "title": "Verify email required before credentials setup during user self-registration",
+   "summary": "When user self-registration is enabled for the realm together with Verify Email, users will not see a password field by default on the registration screen. After registering their profile, the user is required to verify their email and then can set up a password (or optionally other credentials like OTP or Passkey) as a subsequent step."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "socket-timeouts-and-query-timeouts-for-database-connections",
+   "title": "Socket timeouts and query timeouts for database connections",
+   "summary": "For all database connections, Keycloak now sets a socket read timeout matching the respective transaction timeout to prevent long hanging threads. For PostgreSQL databases, it additionally sets a query timeout."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "generated-system-truststore-format-follows-the-active-crypto-provider",
+   "title": "Generated system truststore format follows the active crypto provider",
+   "summary": "The generated system truststore created from conf/truststores, --truststore-paths, and automatically discovered Kubernetes or OpenShift CA certificates now uses the generated truststore format preferred by the active crypto provider."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "configure-totp-and-update-password-required-actions-moved-after-verify-email",
+   "title": "Configure TOTP and Update password required actions moved after Verify Email",
+   "summary": "In relation to the previous point, the required actions Configure OTP and Update password have been reordered to appear after Verify Email. This is done automatically for new realms or during a server update."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "shutdown-timeout-extended",
+   "title": "Shutdown timeout extended",
+   "summary": "Previous versions waited for one second for HTTP requests to finish during the shutdown of a node. The current version extends the timeout to ten seconds by default."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "extensions-must-not-restart-a-keycloak-transaction",
+   "title": "Extensions must not restart a Keycloak transaction",
+   "summary": "This change might affect custom Keycloak extensions. The implicit transaction handling in Keycloak previously assumed that a transaction is started once per session, which is usually request-scoped."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "organization-group-representations-now-include-role-mappings",
+   "title": "Organization group representations now include role mappings",
+   "summary": "Organization group representations returned by the Admin REST API now include realmRoles and clientRoles fields. Previously, these fields were null for organization groups."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "realm-search-now-matches-by-display-name",
+   "title": "Realm search now matches by display name",
+   "summary": "When searching for realms in the admin console, the search now also matches against the realm’s display name in addition to the realm name. As part of this change, the displayName attribute has been promoted from a realm attribute to a dedicated column on the realm entity."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "ldap-binary-attribute-decoding-is-now-configurable",
+   "title": "LDAP binary attribute decoding is now configurable",
+   "summary": "The User Attribute LDAP mapper now includes a Decode Binary Attribute As configuration option that controls how binary LDAP attributes are decoded."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "dpop-not-supported-for-implicit-and-hybrid-flows",
+   "title": "DPoP not supported for implicit and hybrid flows",
+   "summary": "DPoP (Demonstrating Proof of Possession) is no longer supported for implicit and hybrid flows. If a client has the Require DPoP bound tokens option enabled, authorization requests using implicit or hybrid response types will be rejected with an error."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "token-exchange-with-sender-constrained-tokens-allowed-for-scope-changes",
+   "title": "Token Exchange with Sender-constrained tokens allowed for scope changes",
+   "summary": "Standard Token Exchange now accepts sender-constrained tokens when a client is requesting an exchange of their own token. This change allows token audience changes and up/down scoping and is applicable to both DPoP-bound tokens and X.509 certificate-bound tokens (mTLS)."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "haproxy-certificate-lookup-provider",
+   "title": "HAProxy certificate lookup provider",
+   "summary": "The HaProxySslClientCertificateLookup implementation has deprecated support for configuring --spi-x509cert-lookup—​haproxy—​ssl-cert-chain-prefix as HAProxy does not provide a built-in mechanism to forward individual intermediate certificates as dedicated HTTP headers."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "async-custom-rest-endpoints-should-not-be-used",
+   "title": "Async Custom REST Endpoints should not be used",
+   "summary": "Async custom REST endpoints using AsyncResponse or returning an async type such as CompletableFuture or CompletionState should not be used."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "keycloakcontext-refinements-when-no-request-is-active",
+   "title": "KeycloakContext refinements when no request is active",
+   "summary": "The KeycloakContext provided by KeycloakSession for async work will typically not have an active request. The JavaDocs for methods now describe when a ContextNotActiveException is thrown, and some of the logic is now tolerant to returning values even if no request is active."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "service-accounts-excluded-from-user-queries-by-id",
+   "title": "Service accounts excluded from user queries by ID",
+   "summary": "When querying users by ID through the Admin REST API, service accounts are no longer included in the results. Service accounts are internal to their associated clients and should not be exposed through general user queries."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "freemarker-configuration-upgraded-to-version-2-3-32",
+   "title": "FreeMarker configuration upgraded to version 2.3.32",
+   "summary": "The FreeMarker template engine now uses VERSION_2_3_32 defaults instead of the legacy 2.3.0 defaults. This brings improved security defaults and correctness fixes from newer FreeMarker versions."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "client-secret-generation-now-generates-longer-secrets",
+   "title": "Client secret generation now generates longer secrets",
+   "summary": "Newly generated client secrets always use 86 characters to provide enough entropy for HS512 regardless of the configured token endpoint signing algorithm. Previously, the secret length varied based on the signing algorithm, which could result in secrets with insufficient cryptographic strength for some use cases."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "token-post-processors-now-respect-providerfactory-order",
+   "title": "Token post-processors now respect ProviderFactory order",
+   "summary": "Custom OIDCAccessTokenResponseMapperProvider implementations are now invoked in the order defined by their ProviderFactory#order() method when processing token responses."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "custom-provider-changesets-included-in-manual-migration-exports",
+   "title": "Custom provider changesets included in manual migration exports",
+   "summary": "When using --spi-connections-jpa—​quarkus—​migration-strategy=manual, the generated SQL file now includes changesets from custom internal JpaEntityProvider implementations."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "refreshtokenprovider-spi-introduced",
+   "title": "RefreshTokenProvider SPI introduced",
+   "summary": "The refresh token processing logic has been extracted from TokenManager into a dedicated internal RefreshTokenProvider SPI. This refactoring makes refresh token handling pluggable, allowing custom extensions to override the default behavior through the standard SPI mechanism."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "default-aes-key-size-increased-to-256-bits",
+   "title": "Default AES key size increased to 256 bits",
+   "summary": "The default key size for newly generated AES key providers (aes-generated) has been increased from 128 bits to 256 bits for improved security. CNSA 2.0 requires AES-256 for national security systems."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "login-theme-changes-may-affect-custom-themes",
+   "title": "Login theme changes may affect custom themes",
+   "summary": "Several visual changes were made to the login theme in this release: Action buttons across login theme pages now use a consistent horizontal layout. The passkey authentication page and the signing-in page in the account console now display vendor-specific icons for registered passkeys and security keys, making it easier to identify the correct device."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "additional-datasources-may-be-excluded-from-health-checks",
+   "title": "Additional datasources may be excluded from health checks",
+   "summary": "When using multiple datasources, individual datasources can now be excluded from the health check endpoint. This allows deployments with optional or non-critical datasources to avoid false negatives in health monitoring."
+  },
+  {
+   "version": "26.7.0",
+   "category": "notable",
+   "anchor": "session-cookies-now-use-sha-384",
+   "title": "Session cookies now use SHA-384",
+   "summary": "The KC_AUTH_SESSION_HASH and KEYCLOAK_SESSION cookies are now hashed with SHA-384 instead of SHA-256. Although SHA-256 is still safe, CNSA 2.0 specifies SHA-384 as the minimum required hashing algorithm for national security systems."
+  },
+  {
+   "version": "26.7.0",
+   "category": "deprecated",
+   "anchor": "twitter-identity-broker-deprecated-for-removal",
+   "title": "Twitter Identity Broker deprecated for removal",
+   "summary": "In this release, the Twitter Identity Broker is deprecated for removal. It relies on Twitter’s legacy OAuth 1.0a endpoints. As X (formerly Twitter) now supports OAuth 2.0, it is recommended to use the generic OAuth v2 identity provider configured against the X OAuth 2.0 endpoints instead."
+  },
+  {
+   "version": "26.7.0",
+   "category": "deprecated",
+   "anchor": "identity-brokering-api-v1-is-deprecated",
+   "title": "Identity Brokering API V1 is deprecated",
+   "summary": "The Identity Brokering API V1 is now deprecated but remains enabled by default for backward compatibility. See the Release Notes for more details."
+  },
+  {
+   "version": "26.7.0",
+   "category": "deprecated",
+   "anchor": "switch-bearer-only-on-openid-connect-clients-is-deprecated",
+   "title": "Switch Bearer-only on OpenID Connect clients is deprecated",
+   "summary": "The switch Bearer only on OIDC clients is now deprecated and will be removed in a future version. The switch could be used to specify that a client acts only as a service, which cannot authenticate using any grant type or obtain tokens issued to itself."
+  },
+  {
+   "version": "26.7.0",
+   "category": "deprecated",
+   "anchor": "option-allow-regex-pattern-comparison-is-deprecated-for-the-x509-client-authenticator",
+   "title": "Option Allow regex pattern comparison is deprecated for the X509 client authenticator",
+   "summary": "The option Allow regex pattern comparison is deprecated for the X509 client authenticator. This option allows configuring a Java regular expression instead of the exact DN for the client certificate subject DN."
+  },
+  {
+   "version": "26.7.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-sha1-hashing-functions-in-keycloak-27",
+   "title": "Deprecation of SHA1 hashing functions in Keycloak 27",
+   "summary": "NIST is going to fully retire SHA1 hashing function in 2030. Keycloak will remove all uses of SHA1 in version 27. Consider SHA1 hashing retired in all uses within Keycloak."
+  },
+  {
+   "version": "26.7.0",
+   "category": "deprecated",
+   "anchor": "webauthn-policy-option-require-discoverable-credential-deprecated-in-favor-of-discoverable-credential",
+   "title": "WebAuthn policy option Require Discoverable Credential deprecated in favor of Discoverable Credential",
+   "summary": "The WebAuthn policy option Require Discoverable Credential (requireResidentKey) is deprecated and planned to be removed in the future. A new option Discoverable Credential (residentKey) is available in the WebAuthn Policy and WebAuthn Passwordless Policy, following the current WebAuthn specification."
+  },
+  {
+   "version": "26.7.0",
+   "category": "removed",
+   "anchor": "experimental-token-exchange-external-internalv2-feature-removed",
+   "title": "Experimental token-exchange-external-internal:v2 feature removed",
+   "summary": "The experimental and undocumented feature token-exchange-external-internal:v2 has been removed. This feature was superseded by the standard Token Exchange, which provides the same functionality."
+  },
+  {
+   "version": "26.7.0",
+   "category": "removed",
+   "anchor": "batching-option-for-persistent-user-sessions-removed",
+   "title": "Batching option for persistent user sessions removed",
+   "summary": "The internal SPI options to enable writing updates to persistent sessions in batches have been removed. Batching has been disabled in previous releases by default, and its performance proved to be lower than with batching disabled, leading to its removal in this release."
+  },
+  {
+   "version": "26.6.5",
+   "category": "breaking",
+   "anchor": "stricter-checks-in-the-admin-api-for-admin-roles-granted-via-protocol-mappers-2",
+   "title": "Stricter checks in the Admin API for admin roles granted via protocol mappers",
+   "summary": "In this release, access to the Admin API is only granted to users with admin roles that are directly assigned to them, either through direct role assignments or group memberships."
+  },
+  {
+   "version": "26.6.4",
+   "category": "breaking",
+   "anchor": "files-for-the-java-keystore-provider-should-be-placed-inside-a-fixed-realm-directory",
+   "title": "Files for the Java Keystore provider should be placed inside a fixed realm directory",
+   "summary": "The Java Keystore provider allows the realm administrator to load keys from an encrypted Java keystore file instead of the Keycloak’s database."
+  },
+  {
+   "version": "26.6.4",
+   "category": "notable",
+   "anchor": "registration-access-tokens-cannot-be-used-when-client-is-disabled",
+   "title": "Registration Access Tokens cannot be used when client is disabled",
+   "summary": "Registration Access Tokens (RAT) can no longer be used to retrieve, update, or delete a client when the client is disabled. If you attempt to use a RAT to manage a disabled client, the request will be rejected with an HTTP 401 Unauthorized response."
+  },
+  {
+   "version": "26.6.3",
+   "category": "breaking",
+   "anchor": "valid-redirect-uris-for-clients-do-not-accept-wildcards-for-hostname-anymore",
+   "title": "Valid redirect URIs for clients do not accept wildcards for hostname anymore",
+   "summary": "The wildcard comparison for valid redirect URIs does not affect the hostname anymore. Previously patterns like https://example.com* were accepted and lead to allow unintended domains like https://example.com.other.domain.com."
+  },
+  {
+   "version": "26.6.3",
+   "category": "breaking",
+   "anchor": "client-scope-evaluation-now-enforces-access-to-the-user-when-generating-tokens",
+   "title": "Client scope evaluation now enforces access to the user when generating tokens",
+   "summary": "In previous versions of Keycloak, client scope evaluation allow generating tokens without necessarily having the necessary admin roles or permissions to access the user."
+  },
+  {
+   "version": "26.6.3",
+   "category": "breaking",
+   "anchor": "user-profile-metadata-no-longer-returned-on-user-search",
+   "title": "User profile metadata no longer returned on user search",
+   "summary": "When searching for users using the Admin REST API, the user profile metadata is no longer included for each user in the search results. This change was made to improve performance of user search operations, as fetching user profile metadata for each user can be resource-intensive."
+  },
+  {
+   "version": "26.6.3",
+   "category": "notable",
+   "anchor": "maximum-length-of-the-token-parameters-in-the-oidc-token-endpoint",
+   "title": "Maximum length of the token parameters in the OIDC token endpoint",
+   "summary": "When the OIDC token endpoint request (or OAuth2 token endpoint request) is sent, a new limit exists for the maximum length of \"token\" OIDC/OAuth2 parameter. The maximum length of each \"normal\" parameter is still 4,000 characters as in previous version."
+  },
+  {
+   "version": "26.6.3",
+   "category": "notable",
+   "anchor": "cors-requests-with-an-invalid-origin-are-now-rejected-before-endpoint-logic-runs",
+   "title": "CORS requests with an invalid Origin are now rejected before endpoint logic runs",
+   "summary": "Cross-origin requests sent to OIDC endpoints (such as the token, userinfo, token revocation, logout, and PAR endpoints) are now validated against the client’s configured Web Origins before the endpoint reaches its authentication and request-processing logic."
+  },
+  {
+   "version": "26.6.3",
+   "category": "notable",
+   "anchor": "extensions-must-not-restart-a-keycloak-transaction-2",
+   "title": "Extensions must not restart a Keycloak transaction",
+   "summary": "This change might affect custom Keycloak extensions. The implicit transaction handling in Keycloak previously assumed that a transaction is started once per session, which is usually request-scoped."
+  },
+  {
+   "version": "26.6.3",
+   "category": "notable",
+   "anchor": "validation-of-client_session_host-parameter",
+   "title": "Validation of client_session_host parameter",
+   "summary": "The client_session_host parameter is now validated against the client’s registered nodes and management URL. This parameter is sent by clients during token refresh and is used when the ${application.session.host} placeholder is present in a client’s backchannel logout URL configuration."
+  },
+  {
+   "version": "26.6.2",
+   "category": "breaking",
+   "anchor": "token-introspection-now-validates-audience-claim",
+   "title": "Token introspection now validates audience claim",
+   "summary": "The OAuth2 token introspection endpoint now validates that the authenticated client is present in the token’s audience (aud) claim before allowing introspection."
+  },
+  {
+   "version": "26.6.2",
+   "category": "breaking",
+   "anchor": "userinfo-endpoint-rejects-lightweight-access-tokens",
+   "title": "UserInfo endpoint rejects lightweight access tokens",
+   "summary": "The UserInfo endpoint now rejects lightweight access tokens by default. Lightweight access tokens contain minimal claims and are designed for token introspection."
+  },
+  {
+   "version": "26.6.2",
+   "category": "notable",
+   "anchor": "webauthn-acceptable-aaguids-option-restricts-authenticators-strictly",
+   "title": "WebAuthn acceptable AAGUIDs option restricts authenticators strictly",
+   "summary": "The WebAuthn policy presents the option Acceptable AAGUIDs to restrict the authenticators that are allowed to register new credentials. The AAGUID (Authenticator Attestation Global Unique Identifier) is an identifier for the authenticator’s type (e.g., make and model)."
+  },
+  {
+   "version": "26.6.2",
+   "category": "notable",
+   "anchor": "workflow-schedule-synchronization-across-cluster-nodes",
+   "title": "Workflow schedule synchronization across cluster nodes",
+   "summary": "A new cluster event was introduced to synchronize workflow scheduled settings across cluster nodes. You might see errors when updating workflow definitions during a rolling update when upgrading from 26.6.x."
+  },
+  {
+   "version": "26.6.2",
+   "category": "notable",
+   "anchor": "required-actions-are-one-time-actions-by-default",
+   "title": "Required actions are one-time actions by default",
+   "summary": "Since this release, all Required Actions are now one-time actions by default to ensure they cannot be reused once completed. This change impacts the email action tokens created by the execute-actions-email endpoint, which is executed via the Credential reset button in the Admin console."
+  },
+  {
+   "version": "26.6.1",
+   "category": "notable",
+   "anchor": "manual-migration-if-you-migrated-to-26-6-0",
+   "title": "Manual migration if you migrated to 26.6.0",
+   "summary": "Edit this section Report an issue The migration to 26.6.0 might have introduced the Organization sub-flow to your custom browser flow in case they were bound to the browser flow binding type."
+  },
+  {
+   "version": "26.6.1",
+   "category": "breaking",
+   "anchor": "outgoing-http-connections-do-not-follow-redirects",
+   "title": "Outgoing HTTP connections do not follow redirects",
+   "summary": "Since this release, the HTTP connections originated from the Keycloak server do not follow redirects by default. The HTTP result will be the redirect status (3xx) code, and the Location header will not be automatically fetched."
+  },
+  {
+   "version": "26.6.1",
+   "category": "breaking",
+   "anchor": "client-scope-evaluation-now-enforces-access-to-the-user-when-generating-tokens-2",
+   "title": "Client scope evaluation now enforces access to the user when generating tokens",
+   "summary": "In previous versions of Keycloak, client scope evaluation allow generating tokens without necessarily having the necessary admin roles or permissions to access the user."
+  },
+  {
+   "version": "26.6.0",
+   "category": "breaking",
+   "anchor": "javascript-based-policies-can-now-only-be-deployed-if-the-scripts-feature-is-enabled",
+   "title": "JavaScript-based policies can now only be deployed if the scripts feature is enabled",
+   "summary": "In this version, JavaScript-based policies can only be deployed if the scripts feature is enabled. Until now, JavaScript-based policies were always enabled regardless of the scripts feature flag."
+  },
+  {
+   "version": "26.6.0",
+   "category": "breaking",
+   "anchor": "stricter-validation-for-client-uris-secure-client-uris",
+   "title": "Stricter Validation for Client URIs (secure-client-uris)",
+   "summary": "The 'secure-client-uris' client policy executor has been updated to enforce stricter validation on Client URIs. This aligns with FAPI 2.0 security requirements by mandating TLS (HTTPS) for client endpoints."
+  },
+  {
+   "version": "26.6.0",
+   "category": "breaking",
+   "anchor": "the-identity-provider-issuer-should-be-unique-for-the-jwt-authorization-grant-and-client-assertions",
+   "title": "The Identity Provider issuer should be unique for the JWT authorization grant and client assertions",
+   "summary": "The JWT authorization grant and the client assertion authentication use the issuer claim passed in the assertion to locate the Identity Provider defined in Keycloak, and that provider validates the claims and signature in the assertion."
+  },
+  {
+   "version": "26.6.0",
+   "category": "breaking",
+   "anchor": "endpoints-are-opened-while-keycloak-is-initializing",
+   "title": "Endpoints are opened while Keycloak is initializing",
+   "summary": "Keycloak now opens its HTTP(S) and Management ports while initialization is still in progress when the health endpoints are enabled. This resolves problems with long-running migrations on platforms like Kubernetes where a migration might otherwise be aborted, leaving the database in a potentially inconsistent state."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "usage-of-second-class-options",
+   "title": "Usage of second-class options",
+   "summary": "In prior releases, the introduction of a first-class option with a default would cause the second-class option (typically spi or quarkus properties) to no longer be used at all."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "new-option-for-transaction-timeout",
+   "title": "New option for transaction timeout",
+   "summary": "A new option transaction-default-timeout has been introduced to configure the default transaction timeout in Keycloak. While using Quarkus properties directly is not the supported way to configure Keycloak, some users may have used quarkus.transaction-manager.default-transaction-timeout to customize the transaction timeout."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "dev-mode-defaults-to-localhost",
+   "title": "Dev Mode defaults to localhost",
+   "summary": "When running the server in dev mode on a platform other than Windows Subsystem For Linux, the http-host setting will default to localhost. This ensures your dev instance won’t be accessible from other machines."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "graceful-shutdown-of-http-stack",
+   "title": "Graceful shutdown of HTTP stack",
+   "summary": "Starting with this version, Keycloak will apply a shutdown delay and a shutdown timeout of one second each to allow a graceful termination. Users should adjust those values depending on their proxy setup."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "x-forwarded-prefix-header-is-now-supported",
+   "title": "X-Forwarded-Prefix Header is now supported",
+   "summary": "With proxy-headers set to xforwarded, the server can determine the proxy context path from the X-Forwarded-Prefix header."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "new-brute-force-locking-mechanism",
+   "title": "New brute force locking mechanism",
+   "summary": "There is a new brute force locking mechanism applied to all brute force modes. It is called Secondary Authentication Failures Lockout. The brute force protector counts secondary authentication failures only (for example OTP), and when the maximum specified number is reached, the account is permanently locked even in temporary locking modes."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "client-secret-authentication-method",
+   "title": "Client secret authentication method",
+   "summary": "OIDC specification has multiple client authentication methods. Two of them, client_secret_basic and client_secret_post, are implemented in Keycloak by Client Id and Secret client authenticator."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "zero-downtime-patch-releases-enabled-by-default",
+   "title": "Zero-downtime patch releases enabled by default",
+   "summary": "Zero-downtime patch releases are now enabled by default. This feature, previously in preview as rolling-updates:v2, allows you to perform rolling updates when upgrading to a newer patch version within the same major.minor release stream without service downtime."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "infinispan-16-upgrade",
+   "title": "Infinispan 16 upgrade",
+   "summary": "Keycloak now uses Infinispan 16.0 for embedded distributed caching. This upgrade brings improved performance, enhanced security, and better support for zero-downtime upgrades in patch releases."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "adjusted-default-clock-skew-for-not-before-jwt-token-checks",
+   "title": "Adjusted default clock-skew for not-before JWT token checks",
+   "summary": "Previous versions of Keycloak tested the issued-at timestamp with a clock-skew of zero seconds by default if this value was provided in a token. By default, access tokens issued by Keycloak used for the admin API or for the user info endpoint do not contain a not-before claim, but customized setups might have it."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "the-base-themes-are-now-abstract",
+   "title": "The base themes are now abstract",
+   "summary": "All the base themes are now tagged as abstract, and they are not listed in the admin console to be selected (Realm Settings → Themes tab). They were always intended to be only extended but not used directly."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "truststore-initialization-moved-to-the-server",
+   "title": "Truststore initialization moved to the server",
+   "summary": "Keycloak now automatically discovers and trusts cluster certificate authorities when running on Kubernetes or OpenShift, without relying on the Operator to preconfigure the truststore."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "new-database-indexes-on-the-offline_client_session-table",
+   "title": "New database indexes on the OFFLINE_CLIENT_SESSION table",
+   "summary": "The OFFLINE_CLIENT_SESSION table now contains two additional indexes IDX_OFFLINE_CSS_BY_CLIENT_AND_REALM and IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE to improve performance."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "new-realm_id-column-in-the-offline_client_session-table",
+   "title": "New REALM_ID column in the OFFLINE_CLIENT_SESSION table",
+   "summary": "A new REALM_ID column has been added to the OFFLINE_CLIENT_SESSION table. During the automatic schema migration, Keycloak populates this column by copying the REALM_ID value from the corresponding row in the OFFLINE_USER_SESSION table, matching on USER_SESSION_ID and OFFLINE_FLAG."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "usersessionprovider-api-changes",
+   "title": "UserSessionProvider API changes",
+   "summary": "The internal UserSessionProvider interface received new methods for efficient streaming of user sessions, in both speed and memory. The streaming instances are read-only, meaning they will not change."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "updated-http-status-code-for-invalid_grant-errors-in-the-resource-owner-password-credentials-grant",
+   "title": "Updated HTTP status code for invalid_grant errors in the Resource Owner Password Credentials Grant",
+   "summary": "Authentication failures resulting in an invalid_grant now correctly return an HTTP 400 status code instead of 401 for the Resource Owner Password Credentials and UMA Permission grants."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "sender-constrained-tokens-are-now-rejected-in-standard-token-exchange",
+   "title": "Sender-constrained tokens are now rejected in Standard Token Exchange",
+   "summary": "Standard Token Exchange now rejects all sender-constrained tokens (as defined in RFC 7800) used as the subject_token parameter. This includes both DPoP-bound tokens and X.509 certificate-bound tokens (mTLS)."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "re-indexing-required-for-external-infinispan-server",
+   "title": "Re-indexing required for external Infinispan Server",
+   "summary": "With the clusterless feature enabled and persistent-user-sessions disabled, a re-index is required due to schema changes. Keycloak triggers the re-index on startup, but this may delay server startup depending on the number of sessions stored, and/or return incorrect results during the re-index process."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "automatic-database-connection-properties-for-the-ms-sql-server-driver",
+   "title": "Automatic database connection properties for the MS SQL Server driver",
+   "summary": "When running with the MS SQL server, Keycloak needs to ensure consistent and predictable string parameter handling with the database. Starting with this release, and when using the MS SQL Server JDBC driver, Keycloak sets the sendStringParametersAsUnicode property to false by default."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "new-cli-options-for-transaction-timeout-configuration",
+   "title": "New CLI options for transaction timeout configuration",
+   "summary": "Two new CLI options are now available to control transaction timeout behavior: transaction-default-timeout: Controls the transaction timeout for regular transactions."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "new-columns-for-tracking-resource-creation-and-modification-timestamps",
+   "title": "New columns for tracking resource creation and modification timestamps",
+   "summary": "The USER_ENTITY table now has a new column LAST_MODIFIED_TIMESTAMP, and the KEYCLOAK_GROUP table now has two new columns CREATED_TIMESTAMP and LAST_MODIFIED_TIMESTAMP."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "database-character-encoding-checks-during-startup",
+   "title": "Database character encoding checks during startup",
+   "summary": "Keycloak will log a warning if the database is not configured to use UTF-8 encoding. This check applies to all supported databases. For details on configuring UTF-8 encoding for your database, see the Configuring the database guide."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "new-cli-options-for-database-tls-configuration",
+   "title": "New CLI options for database TLS configuration",
+   "summary": "New CLI options are now available to configure TLS encryption for database connections in a vendor-independent way: db-tls-mode: Sets the TLS mode for the database connection."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "new-db-connect-timeout-option-for-database-connection-and-login-timeout",
+   "title": "New --db-connect-timeout option for database connection and login timeout",
+   "summary": "A new CLI option --db-connect-timeout sets the JDBC driver connection timeout and login timeout. It defaults to 10s to improve failover behavior and startup resilience during network issues."
+  },
+  {
+   "version": "26.6.0",
+   "category": "notable",
+   "anchor": "new-kcraw_-prefix-for-environment-variables-to-preserve-literal-values",
+   "title": "New KCRAW_ prefix for environment variables to preserve literal values",
+   "summary": "Keycloak now supports a KCRAW_ prefix for environment variables as an alternative to the standard KC_ prefix. If you are already using the KCRAW_ prefix for another purpose, please migrate to a new key prefix."
+  },
+  {
+   "version": "26.6.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-specific-tracing-properties-in-keycloak-cr",
+   "title": "Deprecation of specific tracing properties in Keycloak CR",
+   "summary": "The tracing.serviceName and tracing.resourceAttributes fields of the Keycloak CR are now deprecated. You should use the new telemetry.serviceName and telemetry.resourceAttributes fields that are shared among all OpenTelemetry components - logs, metrics, and traces."
+  },
+  {
+   "version": "26.6.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-tracing-span-attributes-for-http-requests",
+   "title": "Deprecation of tracing span attributes for HTTP requests",
+   "summary": "The OpenTelemetry tracing span attributes code.function and code.namespace are deprecated for the HTTP request spans when tracing is enabled. These attributes will be removed in the next major release, and only the fully qualified code.function.name span attribute will stay."
+  },
+  {
+   "version": "26.6.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-legacy-token-exchange",
+   "title": "Deprecation of legacy Token Exchange",
+   "summary": "The feature Legacy token exchange version 1 (V1), although in preview for a very long time, is now marked as deprecated. It will never reach the supported status."
+  },
+  {
+   "version": "26.6.0",
+   "category": "deprecated",
+   "anchor": "usersessionprovider-deprecations",
+   "title": "UserSessionProvider deprecations",
+   "summary": "The methods getUserSessionsStream(RealmModel realm, ClientModel client), getUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults), and getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults) are deprecated for removal."
+  },
+  {
+   "version": "26.6.0",
+   "category": "deprecated",
+   "anchor": "non-utf-8-database-character-encoding-deprecated",
+   "title": "Non-UTF-8 database character encoding deprecated",
+   "summary": "Running Keycloak on a database that is not using UTF-8 as its character set is now deprecated. In the current version Keycloak will log a warning if the database is not configured to use UTF-8 encoding."
+  },
+  {
+   "version": "26.6.0",
+   "category": "deprecated",
+   "anchor": "keycloak-and-keycloakrealmimport-crds-v2beta1-version",
+   "title": "Keycloak and KeycloakRealmImport CRDs v2beta1 version",
+   "summary": "To better capture the maturity of Operator CRDs for the Keycloak and KeycloakRealmImport, the resources now include a v2beta1 version. The previous v2alpha1 version for these resources is deprecated but still served."
+  },
+  {
+   "version": "26.5.7",
+   "category": "notable",
+   "anchor": "maximum-length-of-the-parameters-in-the-oidc-token-endpoint",
+   "title": "Maximum length of the parameters in the OIDC token endpoint",
+   "summary": "When the OIDC token endpoint request (or OAuth2 token endpoint request) is sent, a new limit exists for the maximum length of every OIDC/OAuth2 parameter. The maximum length of each parameter is 4,000 characters, which is aligned with the same limit, which already exists for the parameters sent to OIDC/OAuth authentication request."
+  },
+  {
+   "version": "26.5.5",
+   "category": "notable",
+   "anchor": "http-access-log-does-not-contain-specific-sensitive-information",
+   "title": "HTTP Access log does not contain specific sensitive information",
+   "summary": "Specific sensitive information is omitted from the HTTP Access log, such as the value of the Authorization HTTP header. Moreover, values of specific sensitive Keycloak cookies, such as KEYCLOAK_SESSION, KEYCLOAK_IDENTITY, or AUTH_SESSION_ID, are also omitted."
+  },
+  {
+   "version": "26.5.4",
+   "category": "breaking",
+   "anchor": "the-saml-broker-and-adapter-now-check-the-subjectconfirmationdata-element-for-the-bearer-type",
+   "title": "The SAML broker and adapter now check the SubjectConfirmationData element for the bearer type",
+   "summary": "Now Keycloak, when acting as a SAML Service Provider (SP) in identity brokering or in the adapter, validates the SubjectConfirmationData for the type urn:oasis:names:tc:SAML:2.0:cm:bearer defined in the standard."
+  },
+  {
+   "version": "26.5.4",
+   "category": "notable",
+   "anchor": "more-changes-for-the-server-info-system-information",
+   "title": "More changes for the server-info system information",
+   "summary": "In version 26.4.0, the server-info endpoint changed to just return the system information for administrators in the admin realm. Nevertheless, the version property was detected to be needed by some products that interact with Keycloak."
+  },
+  {
+   "version": "26.5.4",
+   "category": "notable",
+   "anchor": "maximum-inflating-size-for-the-saml-redirect-binding",
+   "title": "Maximum inflating size for the SAML redirect binding",
+   "summary": "Since this release, the Keycloak SAML implementation limits the data that can be inflated through the REDIRECT binding. The default maximum size is 128KB, the decompression stops when that value is exceeded and returns an error."
+  },
+  {
+   "version": "26.5.2",
+   "category": "notable",
+   "anchor": "usage-of-virtual-threads-for-embedded-caches",
+   "title": "Usage of virtual threads for embedded caches",
+   "summary": "Previously virtual threads were used when at least two CPU cores were available. Starting with this version, virtual threads are only used when at least four CPU cores are available."
+  },
+  {
+   "version": "26.5.2",
+   "category": "notable",
+   "anchor": "accepting-url-paths-without-a-semicolon",
+   "title": "Accepting URL paths without a semicolon",
+   "summary": "Previously Keycloak accepted HTTP requests with paths containing a semicolon (;). When processing them, it handled them as of RFC 3986 as a separator for matrix parameters, which basically ignored those parts."
+  },
+  {
+   "version": "26.5.1",
+   "category": "notable",
+   "anchor": "new-database-indexes-on-the-broker_link-table",
+   "title": "New database indexes on the BROKER_LINK table",
+   "summary": "The BROKER_LINK table now contains two additional indexes IDX_BROKER_LINK_USER_ID and IDX_BROKER_LINK_IDENTITY_PROVIDER to improve performance."
+  },
+  {
+   "version": "26.5.0",
+   "category": "breaking",
+   "anchor": "loopback-hostname-verification-on-windows",
+   "title": "Loopback Hostname Verification on Windows",
+   "summary": "Setups on Windows that previously relied on custom machine names or non-standard hostnames for loopback (for example, 127.0.0.1 resolving to a custom name) may require updates to their trusted domain configuration."
+  },
+  {
+   "version": "26.5.0",
+   "category": "breaking",
+   "anchor": "validation-of-client-session-timeouts",
+   "title": "Validation of client session timeouts",
+   "summary": "Previous versions did not validate client settings against the realm settings for SSO session idle and max lifetime, including the remember me settings of the realm."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "welcome-page-now-includes-additional-user-profile-fields",
+   "title": "Welcome Page now includes additional user profile fields",
+   "summary": "The Welcome Page, used to create the initial administrative user, now includes optional fields for First name, Last name, and Email. These fields allow administrators to provide additional profile information when creating the initial admin user."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "postgresql-version-updates",
+   "title": "PostgreSQL version updates",
+   "summary": "The latest major release of PostgreSQL 18 is now supported. We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "enterprisedb-advanced-18-support",
+   "title": "EnterpriseDB Advanced 18 support",
+   "summary": "EDB 18 is now tested and supported in addition to the existing EDB 17 support."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "method-userprofiletorepresentationboolean-added",
+   "title": "Method UserProfile#toRepresentation(boolean) added",
+   "summary": "The UserProfile interface has a new method toRepresentation(boolean). This method allows clients to specify whether to include only the basic attributes in representations or all of them."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "additional-logout-events",
+   "title": "Additional LOGOUT events",
+   "summary": "When logging out sessions via the Account Console Keycloak now creates LOGOUT user events to track this activity. The events are connected to the account client."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "identity-provider-refactoring",
+   "title": "Identity Provider refactoring",
+   "summary": "The private SPI for identity providers has been refactored. This is to allow identity providers to support more use -cases than federated user authentication."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "account-ui-shows-and-manages-offline-sessions",
+   "title": "Account UI shows and manages offline sessions",
+   "summary": "The Account UI and its REST API now shows offline sessions of a user together with regular sessions in the Device Activity tab. A user can log out of those sessions like any other session, including the option Sign out all devices."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "realm-default-locale-attempted-for-translation-fallbacks",
+   "title": "Realm default locale attempted for translation fallbacks",
+   "summary": "When localization for a realm is enabled and a translation for a message key is unavailable for the language the user selected, Keycloak now attempts to find a matching message key with the realm’s default locale before defaulting to English."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "spiffe-identity-provider-configuration-changed",
+   "title": "SPIFFE Identity Provider configuration changed",
+   "summary": "The SPIFFE Identity Provider preview feature now uses the trustDomain configuration instead of issuer. This change was done to make it more explicit that a trustDomain is configured and not the iss of the token, which is usually not set in SPIFFE JWT SVIDs."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "running-on-microsoft-sql-server-now-recommends-read_committed_snapshot",
+   "title": "Running on Microsoft SQL Server now recommends READ_COMMITTED_SNAPSHOT",
+   "summary": "On MS SQL Server, the default transaction isolation level is READ_COMMITTED, which can lead to deadlocks during high load. Therefore, the recommended isolation level for Keycloak is READ_COMMITTED_SNAPSHOT."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "session_state-and-sid-are-no-longer-uuids",
+   "title": "session_state and sid are no longer UUIDs",
+   "summary": "In OpenID connect, there are several places where the protocol shares a session_state and a sid. The specifications define it as an opaque string. Previous versions of Keycloak used a UUID for it, while the current version now uses a random base64-encoded string."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "log-console-color-will-automatically-enable-if-supported-by-the-terminal",
+   "title": "log-console-color will automatically enable if supported by the terminal",
+   "summary": "The log-console-color previously defaulted to false, but it will now instead check if the terminal supports color. You may still explicitly disable color support by setting the option to false."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "message-keys-no-longer-support-html-or-html-entities-in-the-login-theme",
+   "title": "Message keys no longer support HTML or HTML entities in the login theme",
+   "summary": "Message keys in translations and error messages generated in the backend no longer support HTML or HTML entities for the login theme. The only exception is the message key termsText which is used to display the terms and conditions for the respective required action that still allows for a limited set of HTML as before."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "permissions-of-the-database-user-for-postgresql",
+   "title": "Permissions of the database user for PostgreSQL",
+   "summary": "If you are running on PostgreSQL as a database for Keycloak, ensure that the database user has SELECT permissions to the following tables to ensure an efficient upgrade: pg_class, pg_namespace."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "expiration-of-login-failures-from-the-embedded-caches",
+   "title": "Expiration of login failures from the embedded caches",
+   "summary": "Previous entries in the loginFailures cache never expired, and entries accumulated as users entered wrong credentials, increasing the memory consumption."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "not-recommended-to-use-org-keycloak-credential-usercredentialmanager-directly-in-your-extensions",
+   "title": "Not recommended to use org.keycloak.credential.UserCredentialManager directly in your extensions",
+   "summary": "If you have user storage extension and you reference the class org.keycloak.credential.UserCredentialManager from your providers, it is recommended to avoid using this class directly as it might be moved to the private modules in the future releases."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "http-client-connection-request-timeout-has-a-default-and-is-configurable",
+   "title": "HTTP client connection request timeout has a default and is configurable",
+   "summary": "In previous versions, the HTTP client (SPI connections-http-client, provider default) had no default for the connection request timeout, which meant unlimited time."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "ocsp-request-timeouts-follow-http-client-configuration",
+   "title": "OCSP request timeouts follow HTTP client configuration",
+   "summary": "In previous versions, OCSP requests used hardcoded connection and socket timeouts of 10 seconds. In this release, OCSP requests inherit timeouts from the outgoing HTTP client configuration (SPI connections-http-client, provider default)."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "default-authorization-policies-and-resources-are-no-longer-auto-created",
+   "title": "Default authorization policies and resources are no longer auto-created",
+   "summary": "When enabling authorization on a new client (creating a Resource Server), Keycloak no longer automatically creates a “Default Resource”, a “Default Policy”, and a “Default Permission”."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "deleting-expired-sessions-from-the-database",
+   "title": "Deleting expired sessions from the database",
+   "summary": "Previously, a single instance of Keycloak would check and remove expired entries using a cluster-aware scheduled task, with each node attempting to trigger this task every 15 minutes."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "embedded-cache-state-transfer-disabled-for-session-caches-with-persistence",
+   "title": "Embedded cache state-transfer disabled for session caches with persistence",
+   "summary": "When persistent sessions are enabled, session data is available in the database and Infinispan session caches are configured to have num_owners=1. Consequently, state-transfer for embedded caches provides no additional availability for session data, whilst adding significant overhead when Keycloak nodes leave or join the cluster."
+  },
+  {
+   "version": "26.5.0",
+   "category": "notable",
+   "anchor": "organization-custom-attribute-named-id-behavior-change",
+   "title": "Organization custom attribute named id behavior change",
+   "summary": "Organizations can have custom attributes named id. When both organization attributes and organization ID are included in tokens via the organization membership mapper configuration, the organization ID will override any custom id attribute value."
+  },
+  {
+   "version": "26.5.0",
+   "category": "deprecated",
+   "anchor": "new-centralized-opentelemetry-options",
+   "title": "New centralized OpenTelemetry options",
+   "summary": "Keycloak now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces and logs, with future support planned for metrics."
+  },
+  {
+   "version": "26.5.0",
+   "category": "deprecated",
+   "anchor": "fine-grained-admin-permissions-fgap-v1-deprecated",
+   "title": "Fine-Grained Admin Permissions (FGAP) v1 (deprecated)",
+   "summary": "Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements and will be removed in future release. Please migrate to FGAP v2 to ensure continued support."
+  },
+  {
+   "version": "26.5.0",
+   "category": "deprecated",
+   "anchor": "authenticationmanager-authresult-is-now-a-record",
+   "title": "AuthenticationManager.AuthResult is now a record",
+   "summary": "The inner class AuthenticationManager.AuthResult in the keycloak-services module is now a record. The getter methods like getSession() have been deprecated in favor of the session() accessors."
+  },
+  {
+   "version": "26.5.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-methods-for-removing-expired-authentication-sessions-from-authenticationsessionprovider",
+   "title": "Deprecation of methods for removing expired authentication sessions from AuthenticationSessionProvider",
+   "summary": "The methods removeAllExpired() and removeExpired(RealmModel realm) are annotated with the @Deprecated annotation. They have been deprecated since Keycloak 19, as the built-in implementations now use their own internal cleanup mechanisms."
+  },
+  {
+   "version": "26.5.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-methods-for-removing-expired-user-sessions-from-usersessionprovider",
+   "title": "Deprecation of methods for removing expired user sessions from UserSessionProvider",
+   "summary": "The methods removeAllExpired() and removeExpired(RealmModel realm) are deprecated. A new internal cleanup mechanism has been implemented to automatically remove expired sessions from the database."
+  },
+  {
+   "version": "26.5.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-cluster-scheduled-task-clearexpiredusersessions",
+   "title": "Deprecation of cluster scheduled task ClearExpiredUserSessions",
+   "summary": "As AuthenticationSessionProvider and UserSessionProvider now have an internal mechanism to delete expired entries, the scheduled task ClearExpiredUserSessions has been deprecated."
+  },
+  {
+   "version": "26.5.0",
+   "category": "deprecated",
+   "anchor": "fine-grained-admin-permissions-fgap-v1",
+   "title": "Fine-Grained Admin Permissions (FGAP) v1",
+   "summary": "Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements and will be removed in future release. Please migrate to FGAP v2 to ensure continued support."
+  },
+  {
+   "version": "26.5.0",
+   "category": "deprecated",
+   "anchor": "tracing-options-tracing-service-name-and-tracing-resource-attributes",
+   "title": "Tracing options tracing-service-name and tracing-resource-attributes",
+   "summary": "The tracing-service-name and tracing-resource-attributes options are now deprecated in favor of the new centralized telemetry options telemetry-service-name and telemetry-resource-attributes."
+  },
+  {
+   "version": "26.5.0",
+   "category": "removed",
+   "anchor": "postgresql-13-end-of-life",
+   "title": "PostgreSQL 13 (end of life)",
+   "summary": "Version PostgreSQL is end-of-life since November 2025 and therefore no longer supported."
+  },
+  {
+   "version": "26.4.6",
+   "category": "notable",
+   "anchor": "ldap-referrals-filtered-to-allow-only-ldap-referrals",
+   "title": "LDAP referrals filtered to allow only LDAP referrals",
+   "summary": "LDAP referrals now by default are only allowed to include LDAP URLs. This change enhances security and aligns with best practices for LDAP configurations. This also prevents other JNDI references from being used in case you have written custom extensions."
+  },
+  {
+   "version": "26.4.6",
+   "category": "deprecated",
+   "anchor": "disabling-filtering-of-ldap-referrals",
+   "title": "Disabling filtering of LDAP referrals",
+   "summary": "The option spi-storage—​ldap—​secure-referral to disable filtering referrals is deprecated. It will be removed in a future release and filtering will then be enforced."
+  },
+  {
+   "version": "26.4.3",
+   "category": "breaking",
+   "anchor": "accepting-only-normalized-paths-in-requests",
+   "title": "Accepting only normalized paths in requests",
+   "summary": "Previously Keycloak accepted HTTP requests with paths containing double dots (..) or double slashes (//). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC3986."
+  },
+  {
+   "version": "26.4.3",
+   "category": "notable",
+   "anchor": "allowing-realm-administrators-granted-with-the-realm-admin-role-to-assign-admin-roles",
+   "title": "Allowing realm administrators granted with the realm-admin role to assign admin roles",
+   "summary": "In previous versions, realm administrators granted with the realm-admin role were not able to grant admin roles for delegated realm administrators. This was only possible by granting the admin role to a master realm user, making this user a server admin."
+  },
+  {
+   "version": "26.4.3",
+   "category": "notable",
+   "anchor": "added-database-indexes-on-offline_client_session-table",
+   "title": "Added database indexes on OFFLINE_CLIENT_SESSION table",
+   "summary": "This adds new indexes on the OFFLINE_CLIENT_SESSION table to improve performance when retrieving or deleting client sessions."
+  },
+  {
+   "version": "26.4.3",
+   "category": "deprecated",
+   "anchor": "accepting-http-requests-with-non-normalized-paths",
+   "title": "Accepting HTTP requests with non-normalized paths",
+   "summary": "The option http-accept-non-normalized-paths was introduced to restore the previous behavior where Keycloak accepted non-normalized URLs. As this behavior can be problematic for URL filtering, it is deprecated and will be removed in a future release."
+  },
+  {
+   "version": "26.4.2",
+   "category": "breaking",
+   "anchor": "corrected-encoding-when-sending-openid-connect-client-secrets-when-acting-as-a-broker",
+   "title": "Corrected encoding when sending OpenID Connect client secrets when acting as a broker",
+   "summary": "In a scenario where Keycloak acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749."
+  },
+  {
+   "version": "26.4.2",
+   "category": "deprecated",
+   "anchor": "sending-openid-connect-client-secret-via-basic-authentication-without-url-encoding",
+   "title": "Sending OpenID Connect client secret via basic authentication without URL encoding",
+   "summary": "In a scenario where Keycloak acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as Client secret sent as HTTP Basic authentication without URL encoding (client_secret_basic_unencoded)."
+  },
+  {
+   "version": "26.4.1",
+   "category": "notable",
+   "anchor": "user-sessions-created-with-remember-me-are-no-longer-valid-if-remember-me-is-disabled-for-the-realm",
+   "title": "User sessions created with \"Remember Me\" are no longer valid if \"Remember Me\" is disabled for the realm",
+   "summary": "When the \"Remember Me\" option is disabled in the realm settings, all user sessions previously created with the \"Remember Me\" flag are now considered invalid. Users will be required to log in again, and any associated refresh tokens will no longer be usable."
+  },
+  {
+   "version": "26.4.0",
+   "category": "breaking",
+   "anchor": "acr_values-request-parameter-is-not-forwarded-automatically-to-identity-providers",
+   "title": "acr_values request parameter is not forwarded automatically to identity providers",
+   "summary": "The acr_values request parameter is no longer automatically forwarded to OpenID Connect identity providers during authentication. This change enhances security by preventing unintended disclosure of authentication context information to external IDPs."
+  },
+  {
+   "version": "26.4.0",
+   "category": "breaking",
+   "anchor": "configuration-changes-for-additional-datasources",
+   "title": "Configuration changes for additional datasources",
+   "summary": "In previous releases, the only possible way to configure additional datasources was using raw Quarkus properties that are generally considered unsupported. At the same time, adding additional datasources was supported which led to unclear situation."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "supported-databases-versions",
+   "title": "Supported Databases Versions",
+   "summary": "The supported version of each database is now shown in Configuring the database. It is not a supported configuration if the underlying database specific Hibernate dialect allows the use of a version that differs from those shown."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "usage-of-the-exact-request-parameter-when-searching-users-by-attributes",
+   "title": "Usage of the exact request parameter when searching users by attributes",
+   "summary": "If you are querying users by attributes through the User API where you want to fetch users that match a specific attribute key (regardless the value), consider setting the exact request parameter to false when invoking the /admin/realms/{realm}/users using the GET method."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "automatic-database-connection-properties-for-the-postgresql-driver",
+   "title": "Automatic database connection properties for the PostgreSQL driver",
+   "summary": "When running PostgreSQL reader and writer instances, Keycloak needs to always connect to the writer instance to do its work."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "bouncy-castle-libraries-updated-to-2-1-x",
+   "title": "Bouncy Castle libraries updated to 2.1.x",
+   "summary": "If you are running Keycloak in FIPS 140-2 mode, note to update your Bouncy Castle libraries to the versions listed in the release documentation. With the upgrade to Bouncy Castle 2.1.x, EdDSA is now supported in FIPS 140-2 mode."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "creating-remote-caches-automatically-on-the-first-startup",
+   "title": "Creating remote caches automatically on the first startup",
+   "summary": "When using remote caches, Keycloak now automatically creates the necessary caches during startup if they do not already exist on the Infinispan server."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "mysql-and-mariadb-wait_timeout-validation",
+   "title": "MySQL and MariaDB wait_timeout validation",
+   "summary": "In order to prevent connections being closed unexpectedly by the database server, it is necessary to ensure that the Keycloak connection pool is correctly configured with respect to the server’s wait_timeout setting."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "cache-configuration-removed-from-cache-ispn-xml",
+   "title": "Cache configuration removed from cache-ispn.xml",
+   "summary": "The conf/cache-ispn.xml file no longer contains the default cache configurations. You can still overwrite the cache configurations used by Keycloak in this file, however Keycloak logs a warning if the --cache-config-mutate=true option is not set."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "rfc-8414-compliant-lookup-of-metadata",
+   "title": "RFC 8414 compliant lookup of metadata",
+   "summary": "Keycloak now exposes an RFC 8414 compliant endpoint at the root URL level /.well-known/ to allow clients to discover OAuth 2.0 Authorization Server Metadata and other well-known providers by the issuer URL."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "operator-default-affinity-configuration-changed",
+   "title": "Operator default affinity configuration changed",
+   "summary": "The default scheduling strategy has been updated so that a topology spread constraint is created for both zones and nodes in order to increase availability in the presence of failures."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "jgroups-system-properties-replaced-with-cli-options",
+   "title": "JGroups system properties replaced with CLI options",
+   "summary": "Previously, configuring JGroups network addresses and ports required that you use the jgroups.bind.* and jgroups.external_* system properties."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "internal-representation-of-client-sessions-changed",
+   "title": "Internal representation of client sessions changed",
+   "summary": "The cache key of the authenticated client sessions has changed for embedded Infinispan, while the public APIs have not changed. Due to this, you should not run 26.4.x concurrently in a cluster with previous versions."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "external-idp-tokens-automatically-refreshed",
+   "title": "External IDP tokens automatically refreshed",
+   "summary": "When using the /realms/{realm-name}/broker/{provider_alias}/token endpoint for an OAuth 2.0 IDP that provides refresh tokens and JSON responses or for OIDC IDPs, the tokens will be automatically refreshed each time they are retrieved via the endpoint if the access token has expired and the IDP provided a refresh token."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "persistent-user-session-batching-disabled",
+   "title": "Persistent User Session Batching Disabled",
+   "summary": "The batching of persistent user session updates has been turned off by default because it negatively impacts performance with some database vendors, which offsets the benefits with other database vendors."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "required-field-in-user-session-note-mapper",
+   "title": "Required field in User Session note mapper",
+   "summary": "The name of the session note is now shown as a required field in the Admin Console."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "required-field-in-oidc-attribute-mapper",
+   "title": "Required field in OIDC attribute mapper",
+   "summary": "The name of the token claim is now shown as a required field in the Admin Console."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "volatile-user-sessions-affecting-offline-session-memory-requirements",
+   "title": "Volatile user sessions affecting offline session memory requirements",
+   "summary": "Starting with this release, Keycloak caches by default only 10,000 entries for offline user and client sessions in memory when volatile user sessions are enabled."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "translation-resource-bundle-file-names",
+   "title": "Translation resource bundle file names",
+   "summary": "The naming of resource bundles in classloader and folder based themes is now aligned with Java ResourceBunndle#getBundle file names. For all included community languages, such as de or pt-BR, a file is still named messages_de.properties or messages_pt_BR.properties."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "update-email-feature-is-now-supported",
+   "title": "Update Email Feature is now supported",
+   "summary": "Update Email is now a supported feature so it is now enabled during the server startup. The feature is enabled for a realm if the Update Email required action is enabled in the realm."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "new-database-index-on-the-event_entity-table",
+   "title": "New database index on the EVENT_ENTITY table",
+   "summary": "The EVENT_ENTITY table now has an index IDX_EVENT_ENTITY_USER_ID_TYPE on the columns USER_ID, TYPE and EVENT_TIME, which allows a faster search in the Admin Console for events of a specific user and event type."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "encryption-algorithms-for-saml-updated",
+   "title": "Encryption algorithms for SAML updated",
+   "summary": "When a SAML client was enabled to Encrypt Assertions, the assertion included in the SAML response was encrypted following the XML Encryption Syntax and Processing specification."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "validate-email-action",
+   "title": "Validate email action",
+   "summary": "When validating an email address as a required action or an application initiated action, a user can resend the verification email by default only every 30 seconds, while in earlier versions no limitation existed for re-sending the email."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "tracing-extended-for-embedded-infinispan-caches",
+   "title": "Tracing extended for embedded Infinispan caches",
+   "summary": "When tracing is enabled, calls to other nodes of a Keycloak cluster now create spans in the traces. To disable this kind of tracing, set the option tracing-infinispan-enabled to false."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "ldap-connection-default-timeout",
+   "title": "LDAP Connection default timeout",
+   "summary": "If no value is specified either on the LDAP configuration as the connectionTimeout or by the com.sun.jndi.ldap.connect.timeout system property, the default timeout is 5 seconds."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "login-theme-optimized-for-otp-and-recovery-code-entry",
+   "title": "Login theme optimized for OTP and recovery code entry",
+   "summary": "The input fields in the login theme for OTP and recovery codes and have been optimized: The input mode is now numeric, which will ease the input on mobile devices."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "maximum-length-of-the-parameters-in-the-oidc-authentication-request",
+   "title": "Maximum length of the parameters in the OIDC authentication request",
+   "summary": "When the OIDC authentication request (or OAuth2 authorization request) is sent, a new limit exists for the maximum length of every standard OIDC/OAuth2 parameter."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "utf-8-management-in-the-email-sender",
+   "title": "UTF-8 management in the email sender",
+   "summary": "Starting with this release, Keycloak adds a new option allowutf8 for the realm SMTP configuration (Allow UTF-8 field inside the Email tab in the Realm settings section of the Admin Console)."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "aligning-the-count-of-users-with-the-actual-number-of-users-returned-from-searches",
+   "title": "Aligning the count of users with the actual number of users returned from searches",
+   "summary": "When searching for users in the Admin Console or by the User API, the count of users returned from the /admin/realms/{realm}/users/count endpoint is now aligned with the actual number of users returned when executing searches by /admin/realms/{realm}/users."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "welcome-page-changes",
+   "title": "Welcome Page changes",
+   "summary": "The Welcome Page creates regular Admin users instead of temporary ones."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "fine-grained-admin-permissions-new-reset-password-scope-for-users",
+   "title": "Fine-grained admin permissions: new reset-password scope for Users",
+   "summary": "The fine-grained admin permissions (FGAP) feature now includes a new scope: reset-password. This scope allows for specific permissions to be granted to administrators to reset a user’s password without granting them broader manage scope."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "re-created-indexes-on-the-client_attributes-and-group_attribute-tables",
+   "title": "Re-created indexes on the CLIENT_ATTRIBUTES and GROUP_ATTRIBUTE tables",
+   "summary": "In some previous versions of Keycloak, the EnterpriseDB (EDB) was considered unsupported. This has now changed and EDB Advanced is supported starting with this release."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "errors-when-searching-users-from-ldap-will-not-fail-the-request-anymore-and-local-users-will-be-returned",
+   "title": "Errors when searching users from LDAP will not fail the request anymore and local users will be returned",
+   "summary": "Until now, failures when searching for users from an LDAP user federation provider caused the whole request to fail and no users were returned."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "the-serverinfo-endpoint-only-returns-the-system-info-for-administrators-in-the-administrator-realm",
+   "title": "The serverinfo endpoint only returns the system info for administrators in the administrator realm",
+   "summary": "Starting with this version, the serverinfo endpoint, which is used by the admin console to obtain some general information of the Keycloak installation, will only return the system information for administrators in the administration (master) realm."
+  },
+  {
+   "version": "26.4.0",
+   "category": "notable",
+   "anchor": "refactoring-to-simplehttp",
+   "title": "Refactoring to SimpleHttp",
+   "summary": "The SimpleHttp util in the server-spi-private module was refactored and moved to the org.keycloak.http.simple package."
+  },
+  {
+   "version": "26.4.0",
+   "category": "deprecated",
+   "anchor": "displaytest-field-in-consentscoperepresentation",
+   "title": "displayTest field in ConsentScopeRepresentation",
+   "summary": "The displayTest field in the ConsentScopeRepresentation class returned by the Account REST service has been deprecated due to a typo in its name. A new field displayText with the correct spelling has been added to replace it."
+  },
+  {
+   "version": "26.4.0",
+   "category": "deprecated",
+   "anchor": "lifetime-of-offline-session-caches",
+   "title": "Lifetime of offline session caches",
+   "summary": "The options --spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override and --spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override are now deprecated for removal."
+  },
+  {
+   "version": "26.4.0",
+   "category": "deprecated",
+   "anchor": "timestamp-in-the-authenticatedclientsessionmodel",
+   "title": "Timestamp in the AuthenticatedClientSessionModel",
+   "summary": "The timestamp of the last refresh token update of OpenID Connect clients is currently available via AuthenticatedClientSessionModel#getTimestamp() and AuthenticatedClientSessionModel#setTimestamp()."
+  },
+  {
+   "version": "26.4.0",
+   "category": "deprecated",
+   "anchor": "passkeys-conditional-ui-authenticator-requires-a-feature",
+   "title": "Passkeys Conditional UI Authenticator requires a feature",
+   "summary": "The Passkeys Conditional UI Authenticator authenticator was deprecated in the version 26.3.0, but you can still use it if you enable passkeys_conditional_ui_authenticator during server startup."
+  },
+  {
+   "version": "26.4.0",
+   "category": "deprecated",
+   "anchor": "modifying-default-cache-configurations-in-the-cache-config-file",
+   "title": "Modifying default cache configurations in the cache config file",
+   "summary": "All Keycloak default cache configurations have been removed from conf/cache-ispn.xml. Configuration of the default cache configurations in conf/cache-ispn.xml, or in a custom file by --cache-config-file, without specifying --cache-config-mutate=true is now deprecated and will log a warning."
+  },
+  {
+   "version": "26.4.0",
+   "category": "deprecated",
+   "anchor": "simplified-api-for-usersessionprovider",
+   "title": "Simplified API for UserSessionProvider",
+   "summary": "In order to retrieve a client session via UserSessionProvider#getClientSession, you no longer need to pass in the client session ID. The old methods have been deprecated and will be removed in a future release."
+  },
+  {
+   "version": "26.4.0",
+   "category": "deprecated",
+   "anchor": "simplified-api-for-authenticatedclientsessionmodel",
+   "title": "Simplified API for AuthenticatedClientSessionModel",
+   "summary": "The clientId note in the authenticated client session is an internal note present only when using the embedded caches, and is now deprecated for removal. Instead, use the getClient() method."
+  },
+  {
+   "version": "26.3.0",
+   "category": "breaking",
+   "anchor": "reading-information-about-temporarily-locked-users",
+   "title": "Reading information about temporarily locked users",
+   "summary": "In previous releases there was an inconsistency in the REST endpoint result of getting a user (GET /admin/realms/{realm}/users/{user-id}) and searching for a user (GET /admin/realms/{realm}/users)."
+  },
+  {
+   "version": "26.3.0",
+   "category": "breaking",
+   "anchor": "user-searches-through-the-user-api-are-now-respecting-the-user-profile-settings",
+   "title": "User searches through the User API are now respecting the user profile settings",
+   "summary": "When querying users through the User API, the user representation and their attributes are now taking into account the user profile settings defined for the realm."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "opentelemetry-span-attributes-location-changed",
+   "title": "OpenTelemetry span attributes location changed",
+   "summary": "In previous releases, certain OpenTelemetry span attributes such as kc.realmName and kc.clientId appeared on parent HTTP request spans. Span attributes are now set only on child spans where the information is actually known."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "different-credentials-of-a-user-need-to-have-different-names",
+   "title": "Different credentials of a user need to have different names",
+   "summary": "When adding an OTP, WebAuthn or any other 2FA credentials, the name the user assigns to this credential needs to be unique for the given user. This allows the user to distinguish between those credentials, and either update or delete them later."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "restrict-admin-role-mappings-to-server-administrators",
+   "title": "Restrict admin role mappings to server administrators",
+   "summary": "To enhance security, only users with the admin role in the master realm (server admins) can assign admin roles. This ensures that critical permissions cannot be delegated by realm-level administrators."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "problematic-cache-configurations-ignored",
+   "title": "Problematic cache configurations ignored",
+   "summary": "Previous versions of Keycloak warned about problematic configurations, for example, if a wrong number of owners was configured or a cache size was set when it should not have been set when enabling volatile user sessions."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "email-verification-is-now-automatically-set-when-using-a-openid-connect-broker-with-trust-email-is-enabled-and-sync-mode-is-force",
+   "title": "Email verification is now automatically set when using a OpenID Connect broker with Trust email is enabled and Sync Mode is FORCE",
+   "summary": "Until now, the OpenID Connect broker did not support the standard email_verified claim available from the ID Tokens issued by OpenID Connect Providers. In this release, the broker was updated to respect the value from this claim to set the email verification status for the federated (local) user account."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "verify-existing-account-by-email-is-only-executed-for-the-email-and-username-sent-by-the-identity-provider",
+   "title": "Verify existing account by Email is only executed for the email and username sent by the identity provider",
+   "summary": "The execution Verify Existing Account By Email is one of the alternatives that the First Login Flow has to allow a brokering account to be linked to an existing Keycloak user."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "signing-out-from-other-devices-now-disabled-by-default",
+   "title": "Signing out from other devices now disabled by default",
+   "summary": "Previously, when a user updated their credentials, like changing their password or adding another factor like an OTP or Passkey, they had a checkbox Sign out from other devices which was checked by default."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "signing-out-from-other-devices-logs-out-offline-sessions",
+   "title": "Signing out from other devices logs out offline sessions",
+   "summary": "Related to the previous point, in previous versions, the Sign out from other devices checkbox logged out only regular sessions. Starting with this release, it logs out also offline sessions as this is what users would expect to happen given the current screen design."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "updates-to-the-user-profile-commons-ftl-theme-template",
+   "title": "Updates to the user-profile-commons.ftl theme template",
+   "summary": "The user-profile-commons.ftl changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029. As a result, and if you are extending this template, pages might start displaying a locale field."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "subgroup-counts-are-no-longer-cached",
+   "title": "Subgroup counts are no longer cached",
+   "summary": "When returning subgroups of a group, the count of subgroups of each subgroup of a group is no longer cached. With the introduction of Fine-Grained Admin Permissions, the result set is filtered at the database level based on any permissions defined to a realm so that the count will change accordingly to these permissions."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "upgrade-procedure-changed-for-the-distribution",
+   "title": "Upgrade procedure changed for the distribution",
+   "summary": "If you are upgrading Keycloak by downloading the distribution, the upgrade procedure has been changed. Previously it recommended copying over the contents from the conf/ folder from the old to the new installation."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "default-browser-flow-changes-2fa-to-include-webauthn-and-recovery-codes",
+   "title": "Default browser flow changes 2FA to include WebAuthn and Recovery Codes",
+   "summary": "Previously the default browser flow had a Browser - Conditional OTP conditional sub-flow that enabled One-Time Password (OTP) as a 2nd Factor Authentication (2FA)."
+  },
+  {
+   "version": "26.3.0",
+   "category": "notable",
+   "anchor": "syslog-counting-framing-now-enabled-based-on-protocol",
+   "title": "Syslog counting framing now enabled based on protocol",
+   "summary": "Syslog messages sent over tcp (or ssl-tcp) protocol now use counting framing by default, prefixing messages with their size as required by some Syslog servers. To change this behavior, use the --log-syslog-counting-framing option with one of the following values: protocol-dependent (default), true, or false."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "spi-options-separating-the-provider-with-a-single-dash",
+   "title": "SPI options separating the provider with a single dash",
+   "summary": "SPI options ending in -enabled, -provider-default, or -provider are treated as build-time options. However, in some instances, this was not correct as a provider could have a configuration property ending in one of those suffixes as well."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "kubernetes-cache-stack-has-been-deprecated",
+   "title": "Kubernetes cache stack has been deprecated",
+   "summary": "The kubernetes cache stack has been deprecated and will be removed in a future release. Users should transition to the jdbc-ping stack. Consequently, the Keycloak Operator now uses the jdbc-ping cache stack by default."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-method-requiredactionprovider-getmaxauthage",
+   "title": "Deprecation of method RequiredActionProvider.getMaxAuthAge()",
+   "summary": "The method RequiredActionProvider.getMaxAuthAge() is deprecated. It is effectively not used now. Please use the method RequiredActionProvider.getMaxAuthAge(KeycloakSession session) instead."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-spi-connections-infinispan-quarkus-site-name",
+   "title": "Deprecation of spi-connections-infinispan-quarkus-site-name",
+   "summary": "The option spi-connections-infinispan-quarkus-site-name is deprecated and no longer used for multi-site setups, and it will be removed in the future. Use spi-cache-embedded-default-site-name instead in setups when running with embedded distributed caches."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "deprecated-proprietary-protocol-for-client-initiated-linking-to-the-identity-provider-account",
+   "title": "Deprecated proprietary protocol for client initiated linking to the identity provider account",
+   "summary": "When you want the user, who is authenticated to your client application, to link his or her account to a specific identity provider, consider using the Application initiated action (AIA) based mechanism with the action idp_link."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "deprecated-for-removal-the-instagram-identity-broker",
+   "title": "Deprecated for removal the Instagram Identity Broker",
+   "summary": "In this release, the Instagram Identity Broker is deprecated for removal and is not enabled by default. If you are using this broker, it is recommended to use the Facebook Identity Broker instead."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "local-admin-deprecated-for-removal",
+   "title": "Local admin deprecated for removal",
+   "summary": "UrlType.LOCAL_ADMIN and the corresponding welcome theme variable localAdminUrl have been deprecated for eventual removal. The default welcome resource will now simply mention localhost rather than providing a URL when an admin user has yet to be created."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "deprecated-password-policy-recovery-codes-warning-threshold",
+   "title": "Deprecated password policy Recovery Codes Warning Threshold",
+   "summary": "In relation to supported Recovery codes, we deprecated the password policy Recovery Codes Warning Threshold. This password policy might be removed in the future major version of Keycloak."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "scope-getpropertynames-deprecated-for-removal",
+   "title": "Scope.getPropertyNames deprecated for removal",
+   "summary": "The org.keycloak.Config.Scope.getPropertyNames method has been deprecated for removal."
+  },
+  {
+   "version": "26.3.0",
+   "category": "deprecated",
+   "anchor": "deprecation-of-the-passkeys-conditional-ui-authenticator",
+   "title": "Deprecation of the Passkeys Conditional UI Authenticator",
+   "summary": "The preview feature Passkeys recently introduced a new Passkeys Conditional UI Authenticator that you can use to integrate the passkey auto-fill or conditional UI feature in your login flow."
+  },
+  {
+   "version": "26.3.0",
+   "category": "removed",
+   "anchor": "removal-of-jboss-site-name-and-jboss-node-name",
+   "title": "Removal of jboss.site.name and jboss.node.name",
+   "summary": "Both system properties have been used internally within Keycloak and have not been part of the official documentation. Keycloak will fail to start if those are present."
+  },
+  {
+   "version": "26.3.0",
+   "category": "removed",
+   "anchor": "keycloaksessiontask-useexistingsession-method-removed",
+   "title": "KeycloakSessionTask.useExistingSession method removed",
+   "summary": "KeycloakSessionTask.useExistingSession was only useful to private server logic. Now that this logic has been refined, there is no need for this method. In previous releases there was a default implementation in the interface returning false,Wwe considered it unlikely that it was overwritten in implementations."
+  },
+  {
+   "version": "26.3.0",
+   "category": "removed",
+   "anchor": "usage-of-remote-stores-embedded-caches-is-restricted",
+   "title": "Usage of remote stores embedded caches is restricted",
+   "summary": "The experimental feature cache-embedded-remote-store was removed in this release and usage of remote stores for embedded caches is now restricted."
+  },
+  {
+   "version": "26.2.0",
+   "category": "breaking",
+   "anchor": "changes-to-port-behaviour-with-the-x-forwarded-host-header",
+   "title": "Changes to port behaviour with the X-Forwarded-Host header",
+   "summary": "The X-Forwarded-Host header can optionally also contain the port. In previous versions when the port was omitted from the header, Keycloak fell back to the actual request port."
+  },
+  {
+   "version": "26.2.0",
+   "category": "breaking",
+   "anchor": "changes-to-installing-oracle-jdbc-driver",
+   "title": "Changes to installing Oracle JDBC driver",
+   "summary": "The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed. Instead of providing ojdbc11 JAR, use ojdbc17 JAR as stated in the Installing the Oracle Database driver guide."
+  },
+  {
+   "version": "26.2.0",
+   "category": "breaking",
+   "anchor": "h2-credentials",
+   "title": "H2 Credentials",
+   "summary": "With this version, the default H2 based dev-file database changed its credentials. While migrating from an instance using this dev only database is not supported, you may be able to continue to use your existing H2 database if you explicitly provide the old defaults for the database username and password."
+  },
+  {
+   "version": "26.2.0",
+   "category": "breaking",
+   "anchor": "jwt-client-authentication-aligned-with-the-latest-oidc-specification",
+   "title": "JWT Client authentication aligned with the latest OIDC specification",
+   "summary": "The latest draft version of the OpenID Connect core specification changed the rules for audience validation in JWT client assertions for the Client Authentication methods private_key_jwt and client_secret_jwt."
+  },
+  {
+   "version": "26.2.0",
+   "category": "notable",
+   "anchor": "proxy-trusted-addresses-enforced-for-built-in-x509-client-certificate-lookup-providers",
+   "title": "proxy-trusted-addresses enforced for built-in X509 client certificate lookup providers",
+   "summary": "Built-in X.509 client certificate lookup providers now reflect the proxy-trusted-addresses config option. A certificate provided through the HTTP headers will now be processed only if the proxy is trusted, or proxy-trusted-addresses is unset."
+  },
+  {
+   "version": "26.2.0",
+   "category": "notable",
+   "anchor": "zero-configuration-secure-cluster-communication",
+   "title": "Zero-configuration secure cluster communication",
+   "summary": "For clustering multiple nodes, Keycloak uses distributed caches. Starting with this release for all TCP-based transport stacks, the communication between the nodes is encrypted with TLS and secured with automatically generated ephemeral keys and certificates."
+  },
+  {
+   "version": "26.2.0",
+   "category": "notable",
+   "anchor": "operator-creates-networkpolicies-to-restrict-traffic",
+   "title": "Operator creates NetworkPolicies to restrict traffic",
+   "summary": "The Keycloak Operator now creates by default a NetworkPolicy to restrict traffic to internal ports used for Keycloak’s distributed caches. This strengthens a secure-by-default setup and minimizes the configuration steps of new setups."
+  },
+  {
+   "version": "26.2.0",
+   "category": "notable",
+   "anchor": "supported-standard-token-exchange",
+   "title": "Supported standard token exchange",
+   "summary": "In this release, Keycloak added support for the Standard token exchange (Feature token-exchange-standard:v2). In the past Keycloak releases, Keycloak had only a preview token exchange feature, which is now referred to as Legacy token exchange (Feature token-exchange:v1)."
+  },
+  {
+   "version": "26.2.0",
+   "category": "notable",
+   "anchor": "fine-grained-admin-permissions-supported",
+   "title": "Fine-grained admin permissions supported",
+   "summary": "Starting with this release, Keycloak introduces fine-grained admin permissions V2, offering an improved and more flexible authorization model for administrative permissions."
+  },
+  {
+   "version": "26.2.0",
+   "category": "notable",
+   "anchor": "ldap-provider-now-can-store-new-users-groups-and-roles-in-a-sub-dn-of-the-base-dn",
+   "title": "LDAP provider now can store new users, groups, and roles in a sub-DN of the base DN",
+   "summary": "When adding new users, groups, or roles, the LDAP provider would always store them in the same base DN configured for the searches."
+  },
+  {
+   "version": "26.2.0",
+   "category": "notable",
+   "anchor": "removal-of-the-x-xss-protection-header",
+   "title": "Removal of the X-XSS-Protection header",
+   "summary": "Because the X-XSS-Protection header is no longer supported by any user agents that are supported by Keycloak, it has been removed. This header was a feature of Internet Explorer, Chrome, and Safari that stopped pages from loading when they detected reflected cross-site scripting (XSS) attacks."
+  },
+  {
+   "version": "26.2.0",
+   "category": "notable",
+   "anchor": "jwt-client-authentication-defines-a-new-max-expiration-option-for-the-token",
+   "title": "JWT client authentication defines a new max expiration option for the token",
+   "summary": "When a client is configured to authenticate using the Signed JWT or Signed JWT with Client Secret type, Keycloak now enforces a maximum expiration for the token."
+  },
+  {
+   "version": "26.2.0",
+   "category": "notable",
+   "anchor": "updates-to-the-user-profile-commons-ftl-theme-template-2",
+   "title": "Updates to the user-profile-commons.ftl theme template",
+   "summary": "The user-profile-commons.ftl changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029. As a result, and if you are extending this template, pages might start displaying a locale field."
+  },
+  {
+   "version": "26.1.3",
+   "category": "notable",
+   "anchor": "send-reset-email-force-login-again-for-federated-users-after-reset-credentials",
+   "title": "Send Reset Email force login again for federated users after reset credentials",
+   "summary": "Previously the reset credentials flow (forgot password feature) kept the user logged in after the reset credentials if the same authentication session (same browser) was used."
+  },
+  {
+   "version": "26.1.0",
+   "category": "notable",
+   "anchor": "offline-access-removes-the-associated-online-session-if-the-offline_scope-is-requested-in-the-initial-exchange",
+   "title": "Offline access removes the associated online session if the offline_scope is requested in the initial exchange",
+   "summary": "Any offline session in Keycloak is created from an online session. When the offline_access scope is requested, the current online session is used to create the associated offline session for the client."
+  },
+  {
+   "version": "26.1.0",
+   "category": "notable",
+   "anchor": "new-client-scope-service_account-for-client_credentials-grant-mappers",
+   "title": "New client scope service_account for client_credentials grant mappers",
+   "summary": "Keycloak introduces a new client scope at the realm level called service_account which is in charge of adding the specific claims for client_credentials grant (client_id, clientHost and clientAddress) via protocol mappers."
+  },
+  {
+   "version": "26.1.0",
+   "category": "notable",
+   "anchor": "deprecation-notices",
+   "title": "Deprecation notices",
+   "summary": "This lists functionality that continues to work as before in this release, but will be removed in a future major release."
+  },
+  {
+   "version": "26.1.0",
+   "category": "notable",
+   "anchor": "default-db-option-for-production-deprecated",
+   "title": "Default db option for production deprecated.",
+   "summary": "In previous releases, the db option defaulted to dev-file both in production (start) and development (start-dev) modes while dev-file has never been supported in the production mode."
+  },
+  {
+   "version": "26.1.0",
+   "category": "notable",
+   "anchor": "deprecated-apis-for-javascript-authorization-client",
+   "title": "Deprecated APIs for JavaScript Authorization client",
+   "summary": "The following APIs for the JavaScript Authorization client are deprecated and will be removed in the next major release: The ready property on the KeycloakAuthorization instance."
+  },
+  {
+   "version": "26.1.0",
+   "category": "notable",
+   "anchor": "deprecated-endpoint-for-initiate-registration-from-oidc-client",
+   "title": "Deprecated endpoint for initiate registration from OIDC client",
+   "summary": "The /realms/<realm>/protocol/openid-connect/registrations endpoint, which was used for initiating registration by OIDC client, is now deprecated because a standard way exists to initiate registration from the OIDC client."
+  },
+  {
+   "version": "26.1.0",
+   "category": "notable",
+   "anchor": "deprecating-getall-methods-in-organizations-and-organizationmembers-apis",
+   "title": "Deprecating getAll() methods in Organizations and OrganizationMembers APIs",
+   "summary": "getAll() methods in Organizations and OrganizationMembers APIs are now deprecated and will be removed in the next major release. Instead, use corresponding list(first, max) methods in Organizations and OrganizationMembers APIs."
+  },
+  {
+   "version": "26.1.0",
+   "category": "notable",
+   "anchor": "deprecated-transport-stacks-for-distributed-caches",
+   "title": "Deprecated transport stacks for distributed caches",
+   "summary": "The udp, jdbc-ping-udp, tcp, azure, ec2 and google transport stacks have been deprecated. Users should use the TCP based jdbc-ping stack as a direct replacement."
+  },
+  {
+   "version": "26.0.6",
+   "category": "notable",
+   "anchor": "security-improvements-for-the-key-resolvers",
+   "title": "Security improvements for the key resolvers",
+   "summary": "Edit this section Report an issue While using the REALM_FILESEPARATOR_KEY key resolver, Keycloak now restricts access to FileVault secrets outside of its realm. Characters that could cause path traversal when specifying the expression placeholder in the Administration Console are now prohibited."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "infinispan-marshalling-changes",
+   "title": "Infinispan marshalling changes",
+   "summary": "Edit this section Report an issue Marshalling is the process of converting Java objects into bytes to send them across the network between Keycloak servers. With Keycloak 26, the marshalling library has changed from JBoss Marshalling to Infinispan Protostream."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "operator-no-longer-defaults-to-proxypassthrough",
+   "title": "Operator no longer defaults to proxy=passthrough",
+   "summary": "The Operator will no longer default to the hostname v1 setting of proxy=passthrough. This allows deployments using hostname v2 for a fixed edge hostname to work as desired without additional options."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "new-method-in-clusterprovider-api",
+   "title": "New method in ClusterProvider API",
+   "summary": "The following method was added to org.keycloak.cluster.ClusterProvider: void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) When multiple events are sent to the same taskKey, this method batches events and just perform a single network call."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "group-related-events-no-longer-fired-when-removing-a-realm",
+   "title": "Group-related events no longer fired when removing a realm",
+   "summary": "With the goal of improving the scalability of groups, they are now removed directly from the database when removing a realm. As a consequence, group-related events like the GroupRemovedEvent are no longer fired when removing a realm."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "automatic-redirect-from-root-to-relative-path",
+   "title": "Automatic redirect from root to relative path",
+   "summary": "User is automatically redirected to the path where Keycloak is hosted when the http-relative-path property is specified. It means when the relative path is set to /auth, and the user access localhost:8080/, the page is redirected to localhost:8080/auth."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "operator-scheduling-defaults",
+   "title": "Operator scheduling defaults",
+   "summary": "Keycloak Pods will now have default affinities to prevent multiple instances from the same CR from being deployed on the same node, and all Pods from the same CR will prefer to be in the same zone to prevent stretch cache clusters."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "operators-default-cpu-and-memory-limitsrequests",
+   "title": "Operator’s default CPU and memory limits/requests",
+   "summary": "In order to follow the best practices, the default CPU and memory limits/requests for the Operator were introduced. It affects both non-OLM and OLM installs. To override the default values for the OLM install, edit the resources section in the operator’s subscription."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "deprecations-in-keycloak-common-module",
+   "title": "Deprecations in keycloak-common module",
+   "summary": "The following items have been deprecated for removal in upcoming Keycloak versions with no replacement: org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<T>) org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<?>, java.lang.String) org.keycloak.common.util.reflections.SetAccessiblePrivilegedAction org.keycloak.common.util.reflections.UnSetAccessiblePrivilegedAction"
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "consistent-usage-of-utf-8-charset-for-url-encoding",
+   "title": "Consistent usage of UTF-8 charset for URL encoding",
+   "summary": "org.keycloak.common.util.Encode now always uses the UTF-8 charset for URL encoding instead relying implicitly on the file.encoding system property."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "configuring-the-ldap-connection-pool",
+   "title": "Configuring the LDAP Connection Pool",
+   "summary": "In this release, the LDAP connection pool configuration relies solely on system properties. The main reason is that the LDAP connection pool configuration is a JVM-level configuration rather than specific to an individual realm or LDAP provider instance."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "custom-footer-in-login-theme",
+   "title": "Custom Footer in Login Theme",
+   "summary": "This release introduced the capability to easily add a custom footer to the login pages for the base/login and keycloak.v2/login theme. In order to use a custom footer, create a footer.ftl file in your custom login theme with the desired content."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "persisting-revoked-access-tokens-across-restarts",
+   "title": "Persisting revoked access tokens across restarts",
+   "summary": "In this release, revoked access tokens are written to the database and reloaded when the cluster is restarted by default when using the embedded caches. To disable this behavior, use the SPI option spi-single-use-object-infinispan-persist-revoked-tokens as outlined in the All provider configuration guide."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "highly-available-multi-site-deployments",
+   "title": "Highly available multi-site deployments",
+   "summary": "Keycloak 26 introduces significant improvements to the recommended HA multi-site architecture, most notably: Keycloak deployments are now able to handle user requests simultaneously in both sites."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "external-infinispan-in-a-single-site-setup",
+   "title": "External Infinispan in a single-site setup",
+   "summary": "If you are using an external Infinispan in a single-site setup, this was not supported in earlier versions of Keycloak and it is not supported in Keycloak 26. To protect users from using it accidentally via a manual configuration in Keycloak’s cache XML or via the CLI options, this is now guarded with a feature flag cache-embedded-remote-store."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "admin-bootstrapping-and-recovery",
+   "title": "Admin Bootstrapping and Recovery",
+   "summary": "It used to be difficult to regain access to a Keycloak instance when all admin users were locked out. The process required multiple advanced steps, including direct database access and manual changes."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "application-initiated-required-action-redirect-now-contains-kc_action-parameter",
+   "title": "Application Initiated Required Action redirect now contains kc_action Parameter",
+   "summary": "The required action provider name is now returned via the kc_action parameter when redirecting back from an application initiated required action execution. This eases the detection of which required action was executed for a client."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "deprecations-in-keycloak-services-module",
+   "title": "Deprecations in keycloak-services module",
+   "summary": "The class UserSessionCrossDCManager is deprecated and planned to be removed in a future version of Keycloak. Read the UserSessionCrossDCManager Javadoc for the alternative methods to use."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "identity-providers-no-longer-available-from-the-realm-representation",
+   "title": "Identity Providers no longer available from the realm representation",
+   "summary": "As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation no longer holds the list of identity providers."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "cli-import-placeholder-replacement",
+   "title": "CLI import placeholder replacement",
+   "summary": "The CLI command kc.[sh|bat] import now has placeholder replacement enabled. Previously placeholder replacement was only enabled for realm import at startup. If you wish to disable placeholder replacement for the import command, add the system property -Dkeycloak.migration.replace-placeholders=false"
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "new-java-api-to-search-realms-by-name",
+   "title": "New Java API to search realms by name",
+   "summary": "The RealmProvider Java API now contains a new method Stream<RealmModel> getRealmsStream(String search) which allows searching for a realm by name. While there is a default implementation which filters the stream after loading it from the provider, implementations are encouraged to provide this with more efficient implementation."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "keystore-and-trust-store-default-format-change",
+   "title": "Keystore and trust store default format change",
+   "summary": "Keycloak now determines the format of the keystore and trust store based on the file extension. If the file extension is .p12, .pkcs12 or .pfx, the format is PKCS12."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "improving-performance-for-selection-of-identity-providers",
+   "title": "Improving performance for selection of identity providers",
+   "summary": "New indexes were added to the IDENTITY_PROVIDER table to improve the performance of queries that fetch the IDPs associated with an organization, and fetch IDPs that are available for login (those that are enabled, not link_only, not marked as hide_on_login)."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "removal-of-gelf-logging-handler",
+   "title": "Removal of GELF logging handler",
+   "summary": "GELF support has been deprecated for a while now, and with this release it has been finally removed from Keycloak. Other log handlers are available and fully supported to be used as a replacement of GELF, for example Syslog."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "paths-for-common-theme-resources-have-changed",
+   "title": "Paths for common theme resources have changed",
+   "summary": "Some of the paths for the common resources of the keycloak theme have changed, specifically the resources for third-party libraries."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "additional-datasources-now-require-using-xa",
+   "title": "Additional datasources now require using XA",
+   "summary": "Keycloak by default does not use XA datasources. However, this is considered unsafe if more than one datasource is used. Starting with this release, you need to use XA datasources if you are adding additional datasources to Keycloak."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "hostname-v1-feature-removed",
+   "title": "Hostname v1 feature removed",
+   "summary": "The deprecated hostname v1 feature was removed. This feature was deprecated in Keycloak 25 and replaced by hostname v2. If you are still using this feature, you must migrate to hostname v2."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "proxy-option-removed",
+   "title": "Proxy option removed",
+   "summary": "The deprecated proxy option was removed. This option was deprecated in Keycloak 24 and replaced by the proxy-headers option in combination with hostname options as needed."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "all-user-sessions-are-persisted-by-default",
+   "title": "All user sessions are persisted by default",
+   "summary": "Since the database is now the source of truth for user sessions, it is possible to restrict the size of the session caches to reduce memory usage. If you use the default conf/cache-ispn.xml file the caches for storing user and client sessions are by default configured to store only 10000 sessions and one owner for each entry."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "grace-period-for-idle-sessions-removed-when-persistent-sessions-are-enabled",
+   "title": "Grace period for idle sessions removed when persistent sessions are enabled",
+   "summary": "Previous versions of Keycloak added a grace period of two minutes to idle times of user and client sessions. This was added due to a previous architecture where session refresh times were replicated asynchronously in a cluster."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "support-for-legacy-redirect_uri-parameter-and-spi-options-has-been-removed",
+   "title": "Support for legacy redirect_uri parameter and SPI options has been removed",
+   "summary": "Previous versions of Keycloak had supported automatic logout of the user and redirecting to the application by opening logout endpoint URL such as http(s)://example-host/auth/realms/my-realm-name/protocol/openid-connect/logout?redirect_uri=encodedRedirectUri."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "additional-validations-on-the-optimized-startup-option",
+   "title": "Additional validations on the --optimized startup option",
+   "summary": "The --optimized startup option now requires the optimized server image to be built first. This can be achieved either by running kc.sh|bat build first or by any other server commands (like start, export, import) without the --optimized flag."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "adapter-and-misc-bom-files-are-removed",
+   "title": "Adapter and misc BOM files are removed",
+   "summary": "The org.keycloak.bom:keycloak-adapter-bom and org.keycloak.bom:keycloak-misc-bom BOM files are removed. The adapter BOM was no longer useful because most of the Java adapters are removed."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "keycloak-test-helper-is-removed",
+   "title": "keycloak-test-helper is removed",
+   "summary": "The maven artifact org.keycloak:keycloak-test-helper is removed in this release. The artifact provided a few helper methods for dealing with a Java admin client."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "jee-admin-client-is-removed",
+   "title": "JEE admin-client is removed",
+   "summary": "The JEE admin-client is removed in this release. We still keep supporting Jakarta admin-client."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "new-generalized-event-types-for-credentials",
+   "title": "New generalized event types for credentials",
+   "summary": "There are now generalized events for updating (UPDATE_CREDENTIAL) and removing (REMOVE_CREDENTIAL) a credential. The credential type is described in the credential_type attribute of the events."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "import-realm-option-can-import-the-master-realm",
+   "title": "--import-realm option can import the master realm",
+   "summary": "When running a start or start-dev command with the --import-realm option before the master realm exists, it will be imported if it exists in the import material."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "bouncycastle-fips-updated",
+   "title": "BouncyCastle FIPS updated",
+   "summary": "Our FIPS 140-2 integration is now tested and supported with version 2 of BouncyCastle FIPS libraries. This version is certified with Java 21. If you use FIPS 140-2 integration, it is recommended to upgrade BouncyCastle FIPS library to the versions mentioned in the latest documentation."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "setorcreatechild-method-removed-from-javascript-admin-client",
+   "title": "setOrCreateChild() method removed from JavaScript Admin Client",
+   "summary": "The groups.setOrCreateChild() method has been removed from that JavaScript-based Admin Client. If you are still using this method then use the createChildGroup() or updateChildGroup() methods instead."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "keycloak-js",
+   "title": "Keycloak JS",
+   "summary": "This release includes several changes to Keycloak JS library that should be taken into account. The main motivation for these changes is to de-couple the library from the Keycloak server, so that it can be refactored independently, simplifying the code and making it easier to maintain in the future."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "the-library-is-no-longer-served-statically-from-the-server",
+   "title": "The library is no longer served statically from the server",
+   "summary": "The Keycloak JS library is no longer served statically from the Keycloak server."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "support-for-the-umd-distribution-has-been-removed",
+   "title": "Support for the UMD distribution has been removed",
+   "summary": "The UMD distribution Universal Module Definition of the Keycloak JS library has been removed. This means that the library is no longer exposed as a global variable, and instead must be imported as a module."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "the-configuration-for-the-keycloak-instance-is-now-required",
+   "title": "The configuration for the Keycloak instance is now required",
+   "summary": "Previously it was possible to construct a Keycloak instance without passing any configuration. The configuration would then automatically be loaded from the server from a keycloak.json file based on the path of the included keycloak.js script."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "methods-for-login-are-now-async",
+   "title": "Methods for login are now async",
+   "summary": "Keycloak JS now utilizes the Web Crypto API for various cryptographic functions. Due to the asynchronous nature of this API the following public methods will now always return a Promise: login() createLoginUrl() createRegisterUrl() Make sure to update your code to await these methods: Make sure to update your code to await these methods."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "a-secure-context-is-now-required",
+   "title": "A secure context is now required",
+   "summary": "Keycloak JS now requires a secure context to run. The reason for this is that the library now uses the Web Crypto API for various cryptographic functions. This API is only available in secure contexts, which are contexts that are served over HTTPS, localhost or a .localhost domain."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "stricter-startup-behavior-for-build-time-options",
+   "title": "Stricter startup behavior for build-time options",
+   "summary": "When the provided build-time options differ at startup from the values persisted in the server image during the last optimized Keycloak build, Keycloak will now fail to start."
+  },
+  {
+   "version": "26.0.0",
+   "category": "notable",
+   "anchor": "features-renamed",
+   "title": "Features renamed",
+   "summary": "With feature versions the features account3, admin2, and login2 have been renamed. When disabling a feature there is no need to use the version, for example the admin console is now disabled with --features-disabled=admin."
+  }
+ ]
+}

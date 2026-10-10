@@ -95,6 +95,25 @@ terraform show -json | curl --fail -sS -X POST \
   --data-binary @- "$REALMLINT_URL/v1/terraform-state"
 ```
 
+## Upgrading Keycloak
+
+Before an upgrade, see what changes between the version you run and the
+target, from Keycloak's upgrading guide, and which changes touch your realms:
+
+```
+realmlint upgrade --to 26.8.0 exports/
+```
+
+The running version comes from the exports' `keycloakVersion` (or
+`--from`). Every change the guide lists is shown with a link to it.
+realmlint checks the realms for the changes realm configuration shows, such
+as wildcard hostnames in redirect URIs, deprecated client switches or
+Twitter identity providers, and names the objects they affect; server
+options, APIs and themes are listed for you to read. It exits 1 when a
+change touches the realms. `--all` also lists deprecations and other
+notable changes; `--format json` gives the full report. Upgrades from any
+26.x release are covered.
+
 ## Install
 
 Install script (Linux, macOS, Windows Git Bash; verifies the checksum):

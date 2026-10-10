@@ -27,6 +27,7 @@ Commands:
   check      Check realm exports and report problems
   diff       Compare two realm exports and show what changed
   terraform  Check a Terraform plan, or export a realm to Terraform
+  upgrade    List what upgrading Keycloak changes for your realms
   version    Print the realmlint version
 
 Flags:
@@ -163,6 +164,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return runDiff(args[1:], stdout, stderr)
 	case "terraform":
 		return runTerraform(args[1:], stdout, stderr)
+	case "upgrade":
+		return runUpgrade(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "realmlint: unknown command %q\nRun 'realmlint --help' for usage.\n", args[0])
 		return ExitUsage
