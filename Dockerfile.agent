@@ -1,0 +1,15 @@
+# The realmlint agent for hosted realmlint. Used by GoReleaser (dockers_v2),
+# which places the prebuilt binary for each platform under $TARGETPLATFORM/.
+# Runs as a non-root user with no shell; it only makes outbound HTTPS calls.
+# /data belongs to that user, so a volume mounted there is writable for
+# --out and --backup-to /data/... (Docker copies the ownership into a new
+# named volume).
+FROM busybox:1.37 AS dirs
+RUN mkdir -p /data
+
+FROM gcr.io/distroless/static-debian13:nonroot
+ARG TARGETPLATFORM
+COPY --from=dirs --chown=65532:65532 /data /data
+COPY $TARGETPLATFORM/realmlint-agent /usr/local/bin/realmlint-agent
+WORKDIR /data
+ENTRYPOINT ["/usr/local/bin/realmlint-agent"]

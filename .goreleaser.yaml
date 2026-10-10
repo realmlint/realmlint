@@ -67,7 +67,10 @@ sboms:
   - artifacts: archive
 
 dockers_v2:
-  - images:
+  - id: realmlint
+    ids: [realmlint]
+    dockerfile: Dockerfile
+    images:
       - ghcr.io/realmlint/realmlint
     tags:
       - "{{ .Version }}"
@@ -78,6 +81,24 @@ dockers_v2:
     labels:
       org.opencontainers.image.title: realmlint
       org.opencontainers.image.description: Lint and diff Keycloak realm configuration
+      org.opencontainers.image.source: https://github.com/realmlint/realmlint
+      org.opencontainers.image.licenses: Apache-2.0
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+  - id: realmlint-agent
+    ids: [realmlint-agent]
+    dockerfile: Dockerfile.agent
+    images:
+      - ghcr.io/realmlint/realmlint-agent
+    tags:
+      - "{{ .Version }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: realmlint-agent
+      org.opencontainers.image.description: Agent for hosted realmlint; reads Keycloak through view-only roles and sends snapshots with secrets removed
       org.opencontainers.image.source: https://github.com/realmlint/realmlint
       org.opencontainers.image.licenses: Apache-2.0
       org.opencontainers.image.version: "{{ .Version }}"

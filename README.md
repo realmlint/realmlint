@@ -223,6 +223,9 @@ makes no network calls; the agent connects only to your Keycloak.
 go install github.com/realmlint/realmlint/cmd/realmlint-agent@latest
 # or a release binary (Linux, macOS, Windows; amd64 and arm64), checksum-verified:
 curl -fsSL https://raw.githubusercontent.com/realmlint/realmlint/main/scripts/install.sh | bash -s -- -b realmlint-agent
+# or the container image (linux/amd64, linux/arm64; non-root, writable /data):
+docker run --rm -e REALMLINT_CLIENT_SECRET=<secret> -v realmlint-agent:/data \
+  ghcr.io/realmlint/realmlint-agent --keycloak-url https://sso.example.com --out /data
 
 REALMLINT_CLIENT_SECRET=<secret> realmlint-agent \
   --keycloak-url https://sso.example.com --auth-realm myrealm --out snapshots/

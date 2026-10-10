@@ -51,16 +51,25 @@ jobs:
             dist/*.sbom.json
             dist/checksums.txt
 
-      - name: Find the image digest
+      - name: Find the image digests
         id: image
         run: |
-          digest="$(docker buildx imagetools inspect "ghcr.io/realmlint/realmlint:${GITHUB_REF_NAME#v}" --format '{{json .Manifest}}' | jq -r .digest)"
-          [[ "$digest" == sha256:* ]] || { echo "could not read the image digest: $digest"; exit 1; }
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          for name in realmlint realmlint-agent; do
+            digest="$(docker buildx imagetools inspect "ghcr.io/realmlint/$name:${GITHUB_REF_NAME#v}" --format '{{json .Manifest}}' | jq -r .digest)"
+            [[ "$digest" == sha256:* ]] || { echo "could not read the $name image digest: $digest"; exit 1; }
+            echo "${name//-/_}=$digest" >> "$GITHUB_OUTPUT"
+          done
 
       - name: Attest the container image
         uses: actions/attest-build-provenance@v4
         with:
           subject-name: ghcr.io/realmlint/realmlint
-          subject-digest: ${{ steps.image.outputs.digest }}
+          subject-digest: ${{ steps.image.outputs.realmlint }}
+          push-to-registry: true
+
+      - name: Attest the agent image
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/realmlint/realmlint-agent
+          subject-digest: ${{ steps.image.outputs.realmlint_agent }}
           push-to-registry: true
